@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "Ai-customer-support",
+    "description": "To just read chats first",
+    "version": "1.0",
+    "action": {
+      "default_popup": "hello.html",
+      "default_icon": "hello_extensions.png"
+    }
+  }
