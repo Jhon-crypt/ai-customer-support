@@ -4,7 +4,17 @@
     "description": "To just read chats first",
     "version": "1.0",
     "action": {
-      "default_popup": "hello.html",
-      "default_icon": "hello_extensions.png"
+      "default_popup": "index.html"
+    },
+    "permissions": [
+      "activeTab",
+      "scripting"
+    ],
+    "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+    "background": {
+      "service_worker": "background.js"
     }
   }
+  
