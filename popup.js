@@ -150,3 +150,43 @@ function openChatAndExtract(contactName) {
 
     return ["Contact not found"];
 }
+
+document.getElementById('simulateClickButton').addEventListener('click', () => {
+    // Define the selector for elements with role="listitem"
+    const selector = 'div[class="x10l6tqk xh8yej3 x1g42fcv"]';
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: (selector) => {
+                const elements = document.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    elements.forEach(element => {
+                        // Simulate a mouse click
+                        const mouseEvent = new MouseEvent('mousedown', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        element.dispatchEvent(mouseEvent);
+                        
+                        const mouseUpEvent = new MouseEvent('mouseup', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        element.dispatchEvent(mouseUpEvent);
+
+                        // Alert the content of each element
+                        alert(element.textContent || element.value || "No content found");
+                    });
+                } else {
+                    alert("No elements found with role='listitem'");
+                }
+            },
+            args: [selector]
+        });
+    });
+});
+
+
