@@ -2,19 +2,19 @@
   "manifest_version": 3,
   "name": "Ai-customer-support",
   "description": "To just read chats first",
-  
   "version": "1.0",
   "action": {
-    "default_title": "Click to open panel"
+    "default_popup": "index.html"
   },
-  "permissions": ["scripting", "storage", "sidePanel", "tabs"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
+  "extension_pages": "script-src 'self'; object-src 'self'"
+},
   "background": {
     "service_worker": "background.js"
-  },
-  "icons": {
-    "16": "logo.png"
   }
 }

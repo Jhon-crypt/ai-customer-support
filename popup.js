@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabLinks = document.querySelectorAll('.nav-link');
     const tabPanes = document.querySelectorAll('.tab-pane');
 
-    // Event listeners for tabs
     tabLinks.forEach(link => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // List all contacts when the button is clicked
     document.getElementById('listContactsButton').addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
@@ -29,11 +27,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Fetch chats for a specific contact when button is clicked
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
 
         if (contactName) {
+            showLoader(true);  // Show loader
+
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
@@ -42,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, (results) => {
                     const chatMessages = results[0].result;
                     displayChats(chatMessages);
+                    showLoader(false);  // Hide loader
                 });
             });
         }
@@ -89,6 +89,11 @@ function displayChats(messages) {
         messageBubble.textContent = message;
         chatBox.appendChild(messageBubble);
     });
+}
+
+function showLoader(show) {
+    const loader = document.getElementById('loader');
+    loader.style.display = show ? 'block' : 'none';
 }
 
 function listContacts() {
