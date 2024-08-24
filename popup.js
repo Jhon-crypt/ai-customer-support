@@ -15,23 +15,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('listContactsButton').addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                func: listContacts
-            }, (results) => {
-                const contacts = results[0].result;
-                displayContacts(contacts);
-            });
-        });
+    document.getElementById('personalContactsButton').addEventListener('click', () => {
+        handleButtonClick('All');
+    });
+
+    document.getElementById('groupContactsButton').addEventListener('click', () => {
+        handleButtonClick('Groups');
+    });
+
+    document.getElementById('unreadContactsButton').addEventListener('click', () => {
+        handleButtonClick('Unread');
     });
 
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
 
         if (contactName) {
-            showLoader(true);  // Show loader
+            showLoader(true);
 
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 chrome.scripting.executeScript({
@@ -41,45 +41,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, (results) => {
                     const chatMessages = results[0].result;
                     displayChats(chatMessages);
-                    showLoader(false);  // Hide loader
+                    showLoader(false);
                 });
             });
         }
     });
 });
 
-function displayContacts(contacts) {
-    const contactList = document.getElementById('contactList');
-    contactList.innerHTML = ''; 
-
-    contacts.forEach(contact => {
-        const contactCard = document.createElement('div');
-        contactCard.classList.add('contact-item', 'list-group-item'); 
-
-        contactCard.textContent = contact;
-        contactCard.addEventListener('click', () => {
-            document.getElementById('contactName').value = contact;
-            switchToTab('searchContact');
+function handleButtonClick(buttonText) {
+    showLoader(true);
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: simulateButtonClickByText,
+            args: [buttonText]
+        }, (results) => {
+            const contactList = results[0].result;
+            displayContacts(contactList);
+            showLoader(false);
         });
-
-        contactList.appendChild(contactCard);
     });
 }
 
-function switchToTab(tabId) {
-    const tabLinks = document.querySelectorAll('.nav-link');
-    const tabPanes = document.querySelectorAll('.tab-pane');
+function displayContacts(contacts) {
+    const container = document.querySelector('#contactList');
+    container.innerHTML = '';
 
-    tabLinks.forEach(link => link.classList.remove('active'));
-    tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
+    contacts.forEach(contact => {
+        const contactCard = document.createElement('div');
+        contactCard.classList.add('contact-item');
 
-    document.querySelector(`.nav-link[href="#${tabId}"]`).classList.add('active');
-    document.getElementById(tabId).classList.add('show', 'active');
+        contactCard.innerHTML = `
+            <strong>${contact.title || 'Unknown'}</strong><br>
+            <small>${contact.time || 'No time'}</small><br>
+            <p>${contact.message || 'No message'}</p>
+        `;
+        container.appendChild(contactCard);
+    });
 }
 
 function displayChats(messages) {
     const chatBox = document.getElementById('chatBox');
-    chatBox.innerHTML = ''; 
+    chatBox.innerHTML = '';
 
     messages.forEach((message, index) => {
         const messageBubble = document.createElement('div');
@@ -96,28 +99,60 @@ function showLoader(show) {
     loader.style.display = show ? 'block' : 'none';
 }
 
-function listContacts() {
-    const contactList = document.querySelectorAll("div[role='listitem']");
-    const contacts = [];
+function simulateButtonClickByText(buttonText) {
+    return new Promise((resolve, reject) => {
+        const buttons = document.querySelectorAll('button');
+        let selectedButton = null;
 
-    contactList.forEach(contact => {
-        const nameElement = contact.querySelector("span[dir='auto']");
-        if (nameElement) {
-            contacts.push(nameElement.textContent);
+        buttons.forEach(button => {
+            const buttonContent = button.querySelector('div > div');
+            if (buttonContent && buttonContent.textContent.trim() === buttonText) {
+                selectedButton = button;
+            }
+        });
+
+        if (!selectedButton) {
+            return reject(new Error(`Button with text "${buttonText}" not found`));
         }
+
+        const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+        selectedButton.dispatchEvent(clickEvent);
+
+        setTimeout(() => {
+            const chatList = extractChatList();
+            resolve(chatList);
+        }, 1000);
+    });
+}
+
+function extractChatList() {
+    const chatItems = document.querySelectorAll('.contact-item');
+    const chatList = [];
+
+    chatItems.forEach(item => {
+        const titleElement = item.querySelector('strong');
+        const timeElement = item.querySelector('small');
+        const messageElement = item.querySelector('p');
+
+        const chatDetails = {
+            title: titleElement ? titleElement.textContent.trim() : 'Unknown',
+            time: timeElement ? timeElement.textContent.trim() : 'No time',
+            message: messageElement ? messageElement.textContent.trim() : 'No message'
+        };
+
+        chatList.push(chatDetails);
     });
 
-    return contacts;
+    return chatList;
 }
 
 function openChatAndExtract(contactName) {
-    function simulateMouseClick(element) {
-        const mouseEvent = new MouseEvent('mousedown', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-        element.dispatchEvent(mouseEvent);
+    function simulateMouseClick(selector) {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+            element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        }
     }
 
     function extractMessages() {
@@ -135,58 +170,25 @@ function openChatAndExtract(contactName) {
         return messages;
     }
 
-    const contactList = document.querySelectorAll("div[role='listitem']");
-    for (const contact of contactList) {
-        const nameElement = contact.querySelector("span[dir='auto']");
-        if (nameElement && nameElement.textContent.trim().toLowerCase() === contactName.trim().toLowerCase()) {
-            simulateMouseClick(contact);
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(extractMessages());
-                }, 3000);
-            });
+    function findAndClickButton(buttonText) {
+        const buttons = document.querySelectorAll('button');
+        for (const button of buttons) {
+            const buttonContent = button.querySelector('div > div');
+            if (buttonContent && buttonContent.textContent.trim() === buttonText) {
+                simulateMouseClick(button);
+                return true;
+            }
         }
+        return false;
     }
 
-    return ["Contact not found"];
-}
-
-document.getElementById('simulateClickButton').addEventListener('click', () => {
-    // Define the selector for elements with role="listitem"
-    const selector = 'div[class="x10l6tqk xh8yej3 x1g42fcv"]';
-
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (selector) => {
-                const elements = document.querySelectorAll(selector);
-                if (elements.length > 0) {
-                    elements.forEach(element => {
-                        // Simulate a mouse click
-                        const mouseEvent = new MouseEvent('mousedown', {
-                            view: window,
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        element.dispatchEvent(mouseEvent);
-                        
-                        const mouseUpEvent = new MouseEvent('mouseup', {
-                            view: window,
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        element.dispatchEvent(mouseUpEvent);
-
-                        // Alert the content of each element
-                        alert(element.textContent || element.value || "No content found");
-                    });
-                } else {
-                    alert("No elements found with role='listitem'");
-                }
-            },
-            args: [selector]
-        });
+    return new Promise((resolve) => {
+        if (findAndClickButton('All') || findAndClickButton('Unread') || findAndClickButton('Groups')) {
+            setTimeout(() => {
+                resolve(extractMessages());
+            }, 3000);
+        } else {
+            resolve(["Contact not found"]);
+        }
     });
-});
-
-
+}
