@@ -58,7 +58,7 @@ function handleButtonClick(buttonText) {
             args: [buttonText]
         }, (results) => {
             const contactList = results[0].result;
-            alert(JSON.stringify(contactList)); // Raw JSON alert
+            //alert(JSON.stringify(contactList)); // Raw JSON alert
             displayContacts(contactList);
             showLoader(false);
         });
@@ -163,8 +163,14 @@ function simulateButtonClickByText(buttonText) {
                 contactList.push(contactDetails);
             });
 
-            console.log('Extracted contact list:', contactList); // Debugging log
-            alert(JSON.stringify(contactList)); // Raw JSON alert
+            // Update the contact div with formatted JSON
+            const contactDiv = document.querySelector('.contact');
+            if (contactDiv) {
+                contactDiv.innerHTML = '<pre>' + JSON.stringify(contactList, null, 2) + '</pre>';
+            } else {
+                console.log('Contact div not found.');
+            }
+
             resolve(contactList);
         }, 1500); // Delay might need adjustment depending on the app's response time
     });
@@ -211,7 +217,7 @@ function openChatAndExtract(contactName) {
         if (findAndClickButton('All') || findAndClickButton('Unread') || findAndClickButton('Groups')) {
             setTimeout(() => {
                 const messages = extractMessages();
-                alert('Extracted Messages: ' + JSON.stringify(messages)); // Debugging alert
+                //alert('Extracted Messages: ' + JSON.stringify(messages)); // Debugging alert
                 resolve(messages);
             }, 3000);
         } else {
