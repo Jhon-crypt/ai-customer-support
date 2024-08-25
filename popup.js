@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     args: [contactName]
                 }, (results) => {
                     const chatMessages = results[0].result;
+                    alert('Chat Messages: ' + JSON.stringify(chatMessages)); // Debugging alert
                     displayChats(chatMessages);
                     showLoader(false);
                 });
@@ -57,6 +58,7 @@ function handleButtonClick(buttonText) {
             args: [buttonText]
         }, (results) => {
             const contactList = results[0].result;
+            alert('Contact List: ' + JSON.stringify(contactList)); // Debugging alert
             displayContacts(contactList);
             showLoader(false);
         });
@@ -64,7 +66,11 @@ function handleButtonClick(buttonText) {
 }
 
 function displayContacts(contacts) {
-    const container = document.querySelector('#contactList');
+    const container = document.querySelector('.contact');
+    if (!container) {
+        alert('Contact container not found.');
+        return;
+    }
     container.innerHTML = '';
 
     contacts.forEach(contact => {
@@ -82,6 +88,10 @@ function displayContacts(contacts) {
 
 function displayChats(messages) {
     const chatBox = document.getElementById('chatBox');
+    if (!chatBox) {
+        alert('Chat box not found.');
+        return;
+    }
     chatBox.innerHTML = '';
 
     messages.forEach((message, index) => {
@@ -96,11 +106,17 @@ function displayChats(messages) {
 
 function showLoader(show) {
     const loader = document.getElementById('loader');
+    if (!loader) {
+        alert('Loader not found.');
+        return;
+    }
     loader.style.display = show ? 'block' : 'none';
 }
 
 function simulateButtonClickByText(buttonText) {
     return new Promise((resolve, reject) => {
+        console.log('Simulating button click for:', buttonText); // Debugging log
+
         const buttons = document.querySelectorAll('button');
         let selectedButton = null;
 
@@ -112,38 +128,45 @@ function simulateButtonClickByText(buttonText) {
         });
 
         if (!selectedButton) {
+            alert(`Button with text "${buttonText}" not found`);
             return reject(new Error(`Button with text "${buttonText}" not found`));
         }
 
         const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
         selectedButton.dispatchEvent(clickEvent);
 
+        // Extract contact list after a delay to ensure the contacts are rendered
         setTimeout(() => {
-            const chatList = extractChatList();
-            resolve(chatList);
-        }, 1000);
+            console.log('Attempting to extract contact list...'); // Debugging log
+            const contactItems = document.querySelectorAll('.contact-item');
+
+            if (contactItems.length === 0) {
+                alert('No contact items found.');
+                console.log('No contact items found.');
+                return resolve([]); // Resolve with an empty list if no items are found
+            }
+
+            const contactList = [];
+
+            contactItems.forEach(item => {
+                const titleElement = item.querySelector('strong');
+                const timeElement = item.querySelector('small');
+                const messageElement = item.querySelector('p');
+
+                const contactDetails = {
+                    title: titleElement ? titleElement.textContent.trim() : 'Unknown',
+                    time: timeElement ? timeElement.textContent.trim() : 'No time',
+                    message: messageElement ? messageElement.textContent.trim() : 'No message'
+                };
+
+                contactList.push(contactDetails);
+            });
+
+            console.log('Extracted contact list:', contactList); // Debugging log
+            alert('Extracted Contact List: ' + JSON.stringify(contactList)); // Debugging alert
+            resolve(contactList);
+        }, 1500); // Delay might need adjustment depending on the app's response time
     });
-}
-
-function extractChatList() {
-    const chatItems = document.querySelectorAll('.contact-item');
-    const chatList = [];
-
-    chatItems.forEach(item => {
-        const titleElement = item.querySelector('strong');
-        const timeElement = item.querySelector('small');
-        const messageElement = item.querySelector('p');
-
-        const chatDetails = {
-            title: titleElement ? titleElement.textContent.trim() : 'Unknown',
-            time: timeElement ? timeElement.textContent.trim() : 'No time',
-            message: messageElement ? messageElement.textContent.trim() : 'No message'
-        };
-
-        chatList.push(chatDetails);
-    });
-
-    return chatList;
 }
 
 function openChatAndExtract(contactName) {
@@ -156,6 +179,7 @@ function openChatAndExtract(contactName) {
     }
 
     function extractMessages() {
+        console.log('Extracting messages...'); // Debugging log
         const messageContainers = document.querySelectorAll(".message-in, .message-out");
         const messages = [];
 
@@ -185,9 +209,12 @@ function openChatAndExtract(contactName) {
     return new Promise((resolve) => {
         if (findAndClickButton('All') || findAndClickButton('Unread') || findAndClickButton('Groups')) {
             setTimeout(() => {
-                resolve(extractMessages());
+                const messages = extractMessages();
+                alert('Extracted Messages: ' + JSON.stringify(messages)); // Debugging alert
+                resolve(messages);
             }, 3000);
         } else {
+            alert('Contact not found');
             resolve(["Contact not found"]);
         }
     });
