@@ -58,7 +58,7 @@ function handleButtonClick(buttonText) {
             args: [buttonText]
         }, (results) => {
             const contactList = results[0].result;
-            alert('Contact List: ' + JSON.stringify(contactList)); // Debugging alert
+            alert(JSON.stringify(contactList)); // Raw JSON alert
             displayContacts(contactList);
             showLoader(false);
         });
@@ -138,7 +138,8 @@ function simulateButtonClickByText(buttonText) {
         // Extract contact list after a delay to ensure the contacts are rendered
         setTimeout(() => {
             console.log('Attempting to extract contact list...'); // Debugging log
-            const contactItems = document.querySelectorAll('.contact-item');
+            //alert('Attempting to extract contact list...')
+            const contactItems = document.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
 
             if (contactItems.length === 0) {
                 alert('No contact items found.');
@@ -149,9 +150,9 @@ function simulateButtonClickByText(buttonText) {
             const contactList = [];
 
             contactItems.forEach(item => {
-                const titleElement = item.querySelector('strong');
-                const timeElement = item.querySelector('small');
-                const messageElement = item.querySelector('p');
+                const titleElement = item.querySelector('span[title]');
+                const timeElement = item.querySelector('div._ak8i');
+                const messageElement = item.querySelector('div._ak8k span.x78zum5.x1cy8zhl');
 
                 const contactDetails = {
                     title: titleElement ? titleElement.textContent.trim() : 'Unknown',
@@ -163,7 +164,7 @@ function simulateButtonClickByText(buttonText) {
             });
 
             console.log('Extracted contact list:', contactList); // Debugging log
-            alert('Extracted Contact List: ' + JSON.stringify(contactList)); // Debugging alert
+            alert(JSON.stringify(contactList)); // Raw JSON alert
             resolve(contactList);
         }, 1500); // Delay might need adjustment depending on the app's response time
     });
@@ -219,3 +220,5 @@ function openChatAndExtract(contactName) {
         }
     });
 }
+
+
