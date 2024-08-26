@@ -78,9 +78,7 @@ function displayContacts(contacts) {
         contactCard.classList.add('contact-item');
 
         contactCard.innerHTML = `
-            <strong>${contact.title || 'Unknown'}</strong><br>
-            <small>${contact.time || 'No time'}</small><br>
-            <p>${contact.message || 'No message'}</p>
+            <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
         `;
         container.appendChild(contactCard);
     });
@@ -129,6 +127,7 @@ function simulateButtonClickByText(buttonText) {
 
         if (!selectedButton) {
             alert(`Button with text "${buttonText}" not found`);
+            
             return reject(new Error(`Button with text "${buttonText}" not found`));
         }
 
@@ -138,12 +137,13 @@ function simulateButtonClickByText(buttonText) {
         // Extract contact list after a delay to ensure the contacts are rendered
         setTimeout(() => {
             console.log('Attempting to extract contact list...'); // Debugging log
-            //alert('Attempting to extract contact list...')
+
             const contactItems = document.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
 
             if (contactItems.length === 0) {
                 alert('No contact items found.');
                 console.log('No contact items found.');
+               
                 return resolve([]); // Resolve with an empty list if no items are found
             }
 
@@ -151,30 +151,37 @@ function simulateButtonClickByText(buttonText) {
 
             contactItems.forEach(item => {
                 const titleElement = item.querySelector('span[title]');
-                const timeElement = item.querySelector('div._ak8i');
-                const messageElement = item.querySelector('div._ak8k span.x78zum5.x1cy8zhl');
+                const timeElement = '';
+                const messageElement = '';
 
-                const contactDetails = {
-                    title: titleElement ? titleElement.textContent.trim() : 'Unknown',
-                    time: timeElement ? timeElement.textContent.trim() : 'No time',
-                    message: messageElement ? messageElement.textContent.trim() : 'No message'
-                };
+                const title = titleElement ? titleElement.textContent.trim() : '';
+                const time = timeElement ? timeElement.textContent.trim() : '';
+                const message = messageElement ? messageElement.textContent.trim() : '';
 
-                contactList.push(contactDetails);
+                // Only add the contact if time and message are valid
+                if (time !== 'No time' && message !== 'No message') {
+                    contactList.push({ title, time, message });
+                }
             });
 
-            // Update the contact div with formatted JSON
+            // Update the contact div with only titles
             const contactDiv = document.querySelector('.contact');
             if (contactDiv) {
-                contactDiv.innerHTML = '<pre>' + JSON.stringify(contactList, null, 2) + '</pre>';
+                const titleSpan = contactDiv.querySelector('.title');
+                const timeSpan = contactDiv.querySelector('.time');
+                const messageSpan = contactDiv.querySelector('.message');
+
+                titleSpan.innerHTML = contactList.map(contact => contact.title).join('<br>');
+                timeSpan.innerHTML = contactList.map(contact => contact.time).join('<br>'); // Optional if you want to show time
+                messageSpan.innerHTML = contactList.map(contact => contact.message).join('<br>'); // Optional if you want to show messages
             } else {
                 console.log('Contact div not found.');
             }
-
             resolve(contactList);
-        }, 1500); // Delay might need adjustment depending on the app's response time
+        }, 100); // Delay might need adjustment depending on the app's response time
     });
 }
+
 
 function openChatAndExtract(contactName) {
     function simulateMouseClick(selector) {
