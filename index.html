@@ -82,16 +82,11 @@
             <div class="tab-pane fade show active" id="listContacts" role="tabpanel" aria-labelledby="list-tab">
                 <button class="btn btn-outline-primary btn-sm mr-1" id="personalContactsButton"
                     style="border-radius: 20px;">All</button>
-                <button class="btn btn-outline-primary btn-sm mr-1" id="groupContactsButton"
-                    style="border-radius: 20px;">Groups</button>
                 <button class="btn btn-outline-primary btn-sm" id="unreadContactsButton"
                     style="border-radius: 20px;">Unread</button>
-                <div class="d-flex justify-content-center align-items-center">
-                    <div id="loaderr" class="spinner-border text-primary mt-3" role="status" style="display:none;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                </div>
-                <div class="contact mt-3">
+                <button class="btn btn-outline-primary btn-sm mr-1" id="groupContactsButton"
+                    style="border-radius: 20px;">Groups</button>
+                <div class="contact mt-3" id="contactContainer">
                     <span class="title"></span>
                     <span class="time text-white"></span>
                     <span class="message"></span>

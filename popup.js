@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function () {
     const tabLinks = document.querySelectorAll('.nav-link');
     const tabPanes = document.querySelectorAll('.tab-pane');
@@ -27,22 +28,45 @@ document.addEventListener('DOMContentLoaded', function () {
         handleButtonClick('Unread');
     });
 
+    function initiateNewWhatsAppChat() {
+        const keyboardEvent = new KeyboardEvent('keydown', {
+            key: 'n',
+            code: 'KeyN',
+            which: 78,
+            keyCode: 78,
+            bubbles: true,
+            cancelable: true,
+            ctrlKey: true,
+            altKey: true,
+        });
+    
+        document.dispatchEvent(keyboardEvent);
+        console.log('Initiated new WhatsApp chat shortcut (Ctrl + Alt + N)');
+    }
+
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
-
+    
         if (contactName) {
             showLoader(true);
-
+    
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
-                    func: openChatAndExtract,
-                    args: [contactName]
-                }, (results) => {
-                    const chatMessages = results[0].result;
-                    alert('Chat Messages: ' + JSON.stringify(chatMessages)); // Debugging alert
-                    displayChats(chatMessages);
-                    showLoader(false);
+                    func: initiateNewWhatsAppChat
+                }, () => {
+                    // Wait a bit for the new chat dialog to open
+                    setTimeout(() => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id },
+                            func: openChatAndExtract,
+                            args: [contactName]
+                        }, (results) => {
+                            const chatMessages = results[0].result;
+                            displayChats(chatMessages);
+                            showLoader(false);
+                        });
+                    }, 1000); // Adjust this delay as needed
                 });
             });
         }
@@ -76,13 +100,32 @@ function displayContacts(contacts) {
     contacts.forEach(contact => {
         const contactCard = document.createElement('div');
         contactCard.classList.add('contact-item');
-
         contactCard.innerHTML = `
             <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
         `;
+
+        // Add click event listener for each contact
+        contactCard.addEventListener('click', () => {
+            // Switch to the second tab (Search Chats tab)
+            const searchTabLink = document.getElementById('search-tab');
+            const searchTabPane = document.getElementById('searchContact');
+            const listTabLink = document.getElementById('list-tab');
+            const listTabPane = document.getElementById('listContacts');
+
+            listTabLink.classList.remove('active');
+            listTabPane.classList.remove('show', 'active');
+
+            searchTabLink.classList.add('active');
+            searchTabPane.classList.add('show', 'active');
+
+            // Set the contact name in the form
+            document.getElementById('contactName').value = contact.title || 'Unknown';
+        });
+
         container.appendChild(contactCard);
     });
 }
+
 
 function displayChats(messages) {
     const chatBox = document.getElementById('chatBox');
@@ -233,5 +276,3 @@ function openChatAndExtract(contactName) {
         }
     });
 }
-
-
