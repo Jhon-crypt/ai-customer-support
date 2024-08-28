@@ -39,34 +39,71 @@ document.addEventListener('DOMContentLoaded', function () {
             ctrlKey: true,
             altKey: true,
         });
-    
+
         document.dispatchEvent(keyboardEvent);
+
         console.log('Initiated new WhatsApp chat shortcut (Ctrl + Alt + N)');
+    }
+
+    function searchWhatsAppContacts(query) {
+        return new Promise((resolve, reject) => {
+            const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
+
+            if (!searchInput) {
+                reject('Search input not found. Make sure you are on WhatsApp Web.');
+                return;
+            }
+
+            searchInput.textContent = '';
+            searchInput.focus();
+            document.execCommand('insertText', false, query);
+
+            const enterEvent = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                keyCode: 13,
+                which: 13
+            });
+            searchInput.dispatchEvent(enterEvent);
+
+            // Wait for the search results to load
+            setTimeout(() => {
+                const contactItems = document.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
+                const foundContacts = Array.from(contactItems).map(item => {
+                    const titleElement = item.querySelector('span[title]');
+                    return titleElement ? titleElement.textContent.trim() : '';
+                }).filter(Boolean);
+
+                resolve(foundContacts);
+            }, 1000); // Adjust the timeout as needed
+        });
     }
 
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
-    
+
         if (contactName) {
             showLoader(true);
-    
+
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
                     func: initiateNewWhatsAppChat
                 }, () => {
-                    // Wait a bit for the new chat dialog to open
-                    setTimeout(() => {
-                        chrome.scripting.executeScript({
-                            target: { tabId: tabs[0].id },
-                            func: openChatAndExtract,
-                            args: [contactName]
-                        }, (results) => {
-                            const chatMessages = results[0].result;
-                            displayChats(chatMessages);
-                            showLoader(false);
-                        });
-                    }, 1000); // Adjust this delay as needed
+                    // After initiating new chat, search for the contact
+                    chrome.scripting.executeScript({
+                        target: { tabId: tabs[0].id },
+                        func: searchWhatsAppContacts,
+                        args: [contactName]
+                    }, (results) => {
+                        const foundContacts = results[0].result;
+                        if (foundContacts.length > 0) {
+                            alert(`Contacts found: ${foundContacts.join(', ')}`);
+                        } else {
+                            alert('No contacts found');
+                        }
+                        showLoader(false);
+                    });
                 });
             });
         }
@@ -170,7 +207,7 @@ function simulateButtonClickByText(buttonText) {
 
         if (!selectedButton) {
             alert(`Button with text "${buttonText}" not found`);
-            
+
             return reject(new Error(`Button with text "${buttonText}" not found`));
         }
 
@@ -186,7 +223,7 @@ function simulateButtonClickByText(buttonText) {
             if (contactItems.length === 0) {
                 alert('No contact items found.');
                 console.log('No contact items found.');
-               
+
                 return resolve([]); // Resolve with an empty list if no items are found
             }
 
