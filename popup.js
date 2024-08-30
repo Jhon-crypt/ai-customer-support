@@ -1,3 +1,4 @@
+// Content script for WhatsApp Web Chat Extractor
 
 document.addEventListener('DOMContentLoaded', function () {
     const tabLinks = document.querySelectorAll('.nav-link');
@@ -28,75 +29,6 @@ document.addEventListener('DOMContentLoaded', function () {
         handleButtonClick('Unread');
     });
 
-    function initiateNewWhatsAppChat() {
-        const keyboardEvent = new KeyboardEvent('keydown', {
-            key: 'n',
-            code: 'KeyN',
-            which: 78,
-            keyCode: 78,
-            bubbles: true,
-            cancelable: true,
-            ctrlKey: true,
-            altKey: true,
-        });
-
-        document.dispatchEvent(keyboardEvent);
-
-        console.log('Initiated new WhatsApp chat shortcut (Ctrl + Alt + N)');
-    }
-
-    function searchWhatsAppContacts(query) {
-        return new Promise((resolve) => {
-
-            // Select the search input field
-            const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
-
-            if (!searchInput) {
-                console.error('Search input not found. Make sure you are on WhatsApp Web.');
-                resolve();
-                return;
-            }
-
-            // Clear existing search
-            searchInput.textContent = '';
-
-            // Focus on the search input
-            searchInput.focus();
-            searchInput.click();
-
-            // Dispatch focus and click events
-            const focusEvent = new FocusEvent('focus', { bubbles: true });
-            const clickEvent = new MouseEvent('click', { bubbles: true });
-            searchInput.dispatchEvent(focusEvent);
-            searchInput.dispatchEvent(clickEvent);
-
-            // Ensure the input is empty and focused
-            setTimeout(() => {
-
-
-                // Set the search query
-                document.execCommand('insertText', false, query);
-
-
-                setTimeout(() => {
-                    // Simulate pressing Enter key to trigger the search
-                    const enterEvent = new KeyboardEvent('keydown', {
-                        bubbles: true,
-                        cancelable: true,
-                        key: 'Enter',
-                        keyCode: 13,
-                        which: 13
-                    });
-                    searchInput.dispatchEvent(enterEvent);
-
-                    console.log(`Searching for: ${query}`);
-                    resolve();
-                }, 400); // Wait 0.5 seconds before pressing Enter
-
-            }, 400);
-        });
-    }
-
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
 
@@ -113,15 +45,96 @@ document.addEventListener('DOMContentLoaded', function () {
                             target: { tabId: tabs[0].id },
                             func: searchWhatsAppContacts,
                             args: [contactName]
+                        }, () => {
+                            // Add a delay before extracting chats
+                            setTimeout(() => {
+                                chrome.scripting.executeScript({
+                                    target: { tabId: tabs[0].id },
+                                    func: extractWhatsAppChats
+                                }, (results) => {
+                                    const messages = results[0].result;
+                                    displayChats(messages);
+                                    showLoader(false);
+                                });
+                            }, 3000); // Adjust this delay as needed
                         });
                     }, 3000);
-
                 });
             });
         }
     });
 });
 
+function initiateNewWhatsAppChat() {
+    const keyboardEvent = new KeyboardEvent('keydown', {
+        key: 'n',
+        code: 'KeyN',
+        which: 78,
+        keyCode: 78,
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: true,
+        altKey: true,
+    });
+
+    document.dispatchEvent(keyboardEvent);
+    console.log('Initiated new WhatsApp chat shortcut (Ctrl + Alt + N)');
+}
+
+function searchWhatsAppContacts(query) {
+    return new Promise((resolve) => {
+        const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
+
+        if (!searchInput) {
+            console.error('Search input not found. Make sure you are on WhatsApp Web.');
+            resolve();
+            return;
+        }
+
+        searchInput.textContent = '';
+        searchInput.focus();
+        searchInput.click();
+
+        const focusEvent = new FocusEvent('focus', { bubbles: true });
+        const clickEvent = new MouseEvent('click', { bubbles: true });
+        searchInput.dispatchEvent(focusEvent);
+        searchInput.dispatchEvent(clickEvent);
+
+        setTimeout(() => {
+            document.execCommand('insertText', false, query);
+
+            setTimeout(() => {
+                const enterEvent = new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'Enter',
+                    keyCode: 13,
+                    which: 13
+                });
+                searchInput.dispatchEvent(enterEvent);
+
+                console.log(`Searching for: ${query}`);
+                resolve();
+            }, 400);
+        }, 400);
+    });
+}
+
+function extractWhatsAppChats() {
+    const messageContainers = document.querySelectorAll('div[data-pre-plain-text]');
+    const messages = [];
+
+    messageContainers.forEach(container => {
+        const messageText = container.querySelector('span.selectable-text');
+        if (messageText) {
+            const prePlainText = container.getAttribute('data-pre-plain-text');
+            const fullMessage = prePlainText + messageText.innerText;
+            messages.push(fullMessage);
+        }
+    });
+
+    return messages;
+}
 
 function handleButtonClick(buttonText) {
     showLoader(true);
@@ -132,7 +145,6 @@ function handleButtonClick(buttonText) {
             args: [buttonText]
         }, (results) => {
             const contactList = results[0].result;
-            //alert(JSON.stringify(contactList)); // Raw JSON alert
             displayContacts(contactList);
             showLoader(false);
         });
@@ -142,7 +154,7 @@ function handleButtonClick(buttonText) {
 function displayContacts(contacts) {
     const container = document.querySelector('.contact');
     if (!container) {
-        alert('Contact container not found.');
+        console.error('Contact container not found.');
         return;
     }
     container.innerHTML = '';
@@ -154,9 +166,7 @@ function displayContacts(contacts) {
             <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
         `;
 
-        // Add click event listener for each contact
         contactCard.addEventListener('click', () => {
-            // Switch to the second tab (Search Chats tab)
             const searchTabLink = document.getElementById('search-tab');
             const searchTabPane = document.getElementById('searchContact');
             const listTabLink = document.getElementById('list-tab');
@@ -168,7 +178,6 @@ function displayContacts(contacts) {
             searchTabLink.classList.add('active');
             searchTabPane.classList.add('show', 'active');
 
-            // Set the contact name in the form
             document.getElementById('contactName').value = contact.title || 'Unknown';
         });
 
@@ -176,20 +185,24 @@ function displayContacts(contacts) {
     });
 }
 
-
 function displayChats(messages) {
     const chatBox = document.getElementById('chatBox');
     if (!chatBox) {
-        alert('Chat box not found.');
+        console.error('Chat box not found.');
         return;
     }
     chatBox.innerHTML = '';
 
-    messages.forEach((message, index) => {
+    messages.forEach((message) => {
         const messageBubble = document.createElement('div');
-        const isOutgoing = index % 2 === 0;
+        messageBubble.classList.add('chat-bubble');
+        
+        if (message.includes('] You: ')) {
+            messageBubble.classList.add('outgoing');
+        } else {
+            messageBubble.classList.add('incoming');
+        }
 
-        messageBubble.classList.add('chat-bubble', isOutgoing ? 'outgoing' : 'incoming');
         messageBubble.textContent = message;
         chatBox.appendChild(messageBubble);
     });
@@ -198,15 +211,15 @@ function displayChats(messages) {
 function showLoader(show) {
     const loader = document.getElementById('loader');
     if (!loader) {
-        alert('Loader not found.');
+        console.error('Loader not found.');
         return;
     }
     loader.style.display = show ? 'block' : 'none';
 }
 
 function simulateButtonClickByText(buttonText) {
-    return new Promise((resolve, reject) => {
-        console.log('Simulating button click for:', buttonText); // Debugging log
+    return new Promise((resolve) => {
+        console.log('Simulating button click for:', buttonText);
 
         const buttons = document.querySelectorAll('button');
         let selectedButton = null;
@@ -219,110 +232,32 @@ function simulateButtonClickByText(buttonText) {
         });
 
         if (!selectedButton) {
-            alert(`Button with text "${buttonText}" not found`);
-
-            return reject(new Error(`Button with text "${buttonText}" not found`));
+            console.error(`Button with text "${buttonText}" not found`);
+            return resolve([]);
         }
 
         const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
         selectedButton.dispatchEvent(clickEvent);
 
-        // Extract contact list after a delay to ensure the contacts are rendered
         setTimeout(() => {
-            console.log('Attempting to extract contact list...'); // Debugging log
+            console.log('Attempting to extract contact list...');
 
             const contactItems = document.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
 
             if (contactItems.length === 0) {
-                alert('No contact items found.');
                 console.log('No contact items found.');
-
-                return resolve([]); // Resolve with an empty list if no items are found
+                return resolve([]);
             }
 
             const contactList = [];
 
             contactItems.forEach(item => {
                 const titleElement = item.querySelector('span[title]');
-                const timeElement = '';
-                const messageElement = '';
-
-                const title = titleElement ? titleElement.textContent.trim() : '';
-                const time = timeElement ? timeElement.textContent.trim() : '';
-                const message = messageElement ? messageElement.textContent.trim() : '';
-
-                // Only add the contact if time and message are valid
-                if (time !== 'No time' && message !== 'No message') {
-                    contactList.push({ title, time, message });
-                }
+                const title = titleElement ? titleElement.textContent.trim() : 'Unknown';
+                contactList.push({ title });
             });
 
-            // Update the contact div with only titles
-            const contactDiv = document.querySelector('.contact');
-            if (contactDiv) {
-                const titleSpan = contactDiv.querySelector('.title');
-                const timeSpan = contactDiv.querySelector('.time');
-                const messageSpan = contactDiv.querySelector('.message');
-
-                titleSpan.innerHTML = contactList.map(contact => contact.title).join('<br>');
-                timeSpan.innerHTML = contactList.map(contact => contact.time).join('<br>'); // Optional if you want to show time
-                messageSpan.innerHTML = contactList.map(contact => contact.message).join('<br>'); // Optional if you want to show messages
-            } else {
-                console.log('Contact div not found.');
-            }
             resolve(contactList);
-        }, 100); // Delay might need adjustment depending on the app's response time
-    });
-}
-
-
-function openChatAndExtract(contactName) {
-    function simulateMouseClick(selector) {
-        const element = document.querySelector(selector);
-        if (element) {
-            element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-            element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-        }
-    }
-
-    function extractMessages() {
-        console.log('Extracting messages...'); // Debugging log
-        const messageContainers = document.querySelectorAll(".message-in, .message-out");
-        const messages = [];
-
-        messageContainers.forEach(container => {
-            const messageTextElement = container.querySelector(".copyable-text");
-            if (messageTextElement) {
-                const messageText = messageTextElement.textContent || messageTextElement.innerText;
-                messages.push(messageText);
-            }
-        });
-
-        return messages;
-    }
-
-    function findAndClickButton(buttonText) {
-        const buttons = document.querySelectorAll('button');
-        for (const button of buttons) {
-            const buttonContent = button.querySelector('div > div');
-            if (buttonContent && buttonContent.textContent.trim() === buttonText) {
-                simulateMouseClick(button);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    return new Promise((resolve) => {
-        if (findAndClickButton('All') || findAndClickButton('Unread') || findAndClickButton('Groups')) {
-            setTimeout(() => {
-                const messages = extractMessages();
-                //alert('Extracted Messages: ' + JSON.stringify(messages)); // Debugging alert
-                resolve(messages);
-            }, 3000);
-        } else {
-            alert('Contact not found');
-            resolve(["Contact not found"]);
-        }
+        }, 1000);
     });
 }
