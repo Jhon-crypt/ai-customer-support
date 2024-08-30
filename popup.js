@@ -46,36 +46,54 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function searchWhatsAppContacts(query) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
+
+            // Select the search input field
             const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
 
             if (!searchInput) {
-                reject('Search input not found. Make sure you are on WhatsApp Web.');
+                console.error('Search input not found. Make sure you are on WhatsApp Web.');
+                resolve();
                 return;
             }
 
+            // Clear existing search
             searchInput.textContent = '';
+
+            // Focus on the search input
             searchInput.focus();
-            document.execCommand('insertText', false, query);
+            searchInput.click();
 
-            const enterEvent = new KeyboardEvent('keydown', {
-                bubbles: true,
-                cancelable: true,
-                keyCode: 13,
-                which: 13
-            });
-            searchInput.dispatchEvent(enterEvent);
+            // Dispatch focus and click events
+            const focusEvent = new FocusEvent('focus', { bubbles: true });
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            searchInput.dispatchEvent(focusEvent);
+            searchInput.dispatchEvent(clickEvent);
 
-            // Wait for the search results to load
+            // Ensure the input is empty and focused
             setTimeout(() => {
-                const contactItems = document.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
-                const foundContacts = Array.from(contactItems).map(item => {
-                    const titleElement = item.querySelector('span[title]');
-                    return titleElement ? titleElement.textContent.trim() : '';
-                }).filter(Boolean);
 
-                resolve(foundContacts);
-            }, 1000); // Adjust the timeout as needed
+
+                // Set the search query
+                document.execCommand('insertText', false, query);
+
+
+                setTimeout(() => {
+                    // Simulate pressing Enter key to trigger the search
+                    const enterEvent = new KeyboardEvent('keydown', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: 'Enter',
+                        keyCode: 13,
+                        which: 13
+                    });
+                    searchInput.dispatchEvent(enterEvent);
+
+                    console.log(`Searching for: ${query}`);
+                    resolve();
+                }, 400); // Wait 0.5 seconds before pressing Enter
+
+            }, 400);
         });
     }
 
@@ -90,25 +108,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     target: { tabId: tabs[0].id },
                     func: initiateNewWhatsAppChat
                 }, () => {
-                    // After initiating new chat, search for the contact
-                    chrome.scripting.executeScript({
-                        target: { tabId: tabs[0].id },
-                        func: searchWhatsAppContacts,
-                        args: [contactName]
-                    }, (results) => {
-                        const foundContacts = results[0].result;
-                        if (foundContacts.length > 0) {
-                            alert(`Contacts found: ${foundContacts.join(', ')}`);
-                        } else {
-                            alert('No contacts found');
-                        }
-                        showLoader(false);
-                    });
+                    setTimeout(() => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id },
+                            func: searchWhatsAppContacts,
+                            args: [contactName]
+                        });
+                    }, 3000);
+
                 });
             });
         }
     });
 });
+
 
 function handleButtonClick(buttonText) {
     showLoader(true);

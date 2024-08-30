@@ -7,6 +7,9 @@
     "default_popup": "index.html"
   },
   "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://web.whatsapp.com"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }
