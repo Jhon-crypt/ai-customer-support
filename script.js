@@ -16,39 +16,41 @@ function initiateNewWhatsAppChat() {
     console.log('Initiated new WhatsApp chat shortcut (Ctrl + Alt + N)');
 }
 
-function searchWhatsAppContacts(searchTerm) {
-    // Select the search input field
-    const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
+function searchWhatsAppContacts(query) {
+  // Select the search input field
+  const searchInput = document.querySelector('div[contenteditable="true"][data-tab="3"]');
+  
+  if (!searchInput) {
+    console.error('Search input not found. Make sure you are on WhatsApp Web.');
+    return;
+  }
 
-    if (!searchInput) {
-        console.error('Search input not found. Make sure you are on WhatsApp Web.');
-        return;
-    }
+  // Clear existing search
+  searchInput.textContent = '';
 
-    // Clear existing search
-    searchInput.textContent = '';
+  // Focus on the search input
+  searchInput.focus();
+  searchInput.click();
 
-    // Set the search term
-    searchInput.focus();
-    document.execCommand('insertText', false, searchTerm);
+  // Dispatch focus and click events
+  const focusEvent = new FocusEvent('focus', { bubbles: true });
+  const clickEvent = new MouseEvent('click', { bubbles: true });
+  searchInput.dispatchEvent(focusEvent);
+  searchInput.dispatchEvent(clickEvent);
+  document.execCommand('insertText', false, query);
 
-    // Trigger the search
-    const inputEvent = new Event('input', { bubbles: true });
-    searchInput.dispatchEvent(inputEvent);
+  // Trigger the search
+  const enterEvent = new KeyboardEvent('keydown', {
+    bubbles: true,
+    cancelable: true,
+    keyCode: 13,
+    which: 13
+  });
+  searchInput.dispatchEvent(enterEvent);
 
-    // Simulate pressing Enter key
-    setTimeout(() => {
-        const enterEvent = new KeyboardEvent('keydown', {
-            bubbles: true,
-            cancelable: true,
-            keyCode: 13,
-            which: 13,
-            key: 'Enter'
-        });
-        searchInput.dispatchEvent(enterEvent);
-        console.log(`Searched for contacts with: "${searchTerm}" and pressed Enter`);
-    }, 1000);
+  console.log(`Searching for: ${query}`);
 }
 
 initiateNewWhatsAppChat()
-searchWhatsAppContacts('Moniflow')
+// Example usage:
+searchWhatsAppContacts('Moniflow');
