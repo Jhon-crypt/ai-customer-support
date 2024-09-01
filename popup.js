@@ -56,9 +56,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                     displayChats(messages);
                                     showLoader(false);
                                 });
-                            }, 3000); // Adjust this delay as needed
+                            }, 100); // Adjust this delay as needed
                         });
-                    }, 3000);
+                    }, 100);
                 });
             });
         }
@@ -183,6 +183,38 @@ function displayContacts(contacts) {
 
         container.appendChild(contactCard);
     });
+}function displayContacts(contacts) {
+    const container = document.querySelector('.contact');
+    if (!container) {
+        console.error('Contact container not found.');
+        return;
+    }
+    container.innerHTML = '';
+
+    contacts.forEach(contact => {
+        const contactCard = document.createElement('div');
+        contactCard.classList.add('contact-item');
+        contactCard.innerHTML = `
+            <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
+        `;
+
+        contactCard.addEventListener('click', () => {
+            const searchTabLink = document.getElementById('search-tab');
+            const searchTabPane = document.getElementById('searchContact');
+            const listTabLink = document.getElementById('list-tab');
+            const listTabPane = document.getElementById('listContacts');
+
+            listTabLink.classList.remove('active');
+            listTabPane.classList.remove('show', 'active');
+
+            searchTabLink.classList.add('active');
+            searchTabPane.classList.add('show', 'active');
+
+            document.getElementById('contactName').value = contact.title || 'Unknown';
+        });
+
+        container.appendChild(contactCard);
+    });
 }
 
 function displayChats(messages) {
@@ -253,11 +285,11 @@ function simulateButtonClickByText(buttonText) {
 
             contactItems.forEach(item => {
                 const titleElement = item.querySelector('span[title]');
-                const title = titleElement ? titleElement.textContent.trim() : 'Unknown';
+                const title = titleElement ? titleElement.getAttribute('title') : 'Unknown';
                 contactList.push({ title });
             });
 
             resolve(contactList);
-        }, 1000);
+        }, 200);
     });
 }
