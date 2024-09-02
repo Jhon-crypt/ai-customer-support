@@ -1,4 +1,3 @@
-// Content script for WhatsApp Web Chat Extractor
 
 document.addEventListener('DOMContentLoaded', function () {
     const tabLinks = document.querySelectorAll('.nav-link');
@@ -17,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Existing Event Listeners
     document.getElementById('personalContactsButton').addEventListener('click', () => {
         handleButtonClick('All');
     });
@@ -28,6 +28,51 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('unreadContactsButton').addEventListener('click', () => {
         handleButtonClick('Unread');
     });
+
+    // New Event Listener for Contacts
+    document.getElementById('contactsButton').addEventListener('click', () => {
+        console.log("john")
+        showLoader(true);
+    
+        // Simulate clicks on both "All" and "Groups" buttons at the same time
+        Promise.all([
+            simulateButtonClickByText('All'),
+            simulateButtonClickByText('Groups')
+        ]).then(([allContacts, groupContacts]) => {
+            console.log('All Contacts:', allContacts);
+            console.log('Group Contacts:', groupContacts);
+    
+            // Store "All" contacts in localStorage
+            localStorage.setItem('allContacts', JSON.stringify(allContacts));
+    
+            // Store "Groups" contacts in localStorage
+            localStorage.setItem('groupContacts', JSON.stringify(groupContacts));
+    
+            // Filter contacts that are in "All" but NOT in "Groups"
+            const normalContacts = allContacts.filter(contact =>
+                !groupContacts.some(groupContact => groupContact.title === contact.title)
+            );
+    
+            console.log('Normal Contacts (Not in Groups):', normalContacts);
+    
+            // Store the filtered normal contacts in localStorage
+            localStorage.setItem('normalContacts', JSON.stringify(normalContacts));
+    
+            // Display the filtered contacts
+            displayContacts(normalContacts);
+    
+            // Optionally, also display all contacts
+            displayContacts(allContacts, 'allContactsContainer');
+    
+            showLoader(false);
+        }).catch(error => {
+            console.error('Error fetching contacts:', error);
+            showLoader(false);
+        });
+    });
+    
+
+
 
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
@@ -144,7 +189,13 @@ function handleButtonClick(buttonText) {
             func: simulateButtonClickByText,
             args: [buttonText]
         }, (results) => {
-            const contactList = results[0].result;
+            let contactList = results[0].result;
+
+            // If the Contacts button is clicked, filter out groups
+            if (buttonText === 'Contacts') {
+                contactList = contactList.filter(contact => !contact.isGroup);
+            }
+
             displayContacts(contactList);
             showLoader(false);
         });
@@ -152,38 +203,6 @@ function handleButtonClick(buttonText) {
 }
 
 function displayContacts(contacts) {
-    const container = document.querySelector('.contact');
-    if (!container) {
-        console.error('Contact container not found.');
-        return;
-    }
-    container.innerHTML = '';
-
-    contacts.forEach(contact => {
-        const contactCard = document.createElement('div');
-        contactCard.classList.add('contact-item');
-        contactCard.innerHTML = `
-            <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
-        `;
-
-        contactCard.addEventListener('click', () => {
-            const searchTabLink = document.getElementById('search-tab');
-            const searchTabPane = document.getElementById('searchContact');
-            const listTabLink = document.getElementById('list-tab');
-            const listTabPane = document.getElementById('listContacts');
-
-            listTabLink.classList.remove('active');
-            listTabPane.classList.remove('show', 'active');
-
-            searchTabLink.classList.add('active');
-            searchTabPane.classList.add('show', 'active');
-
-            document.getElementById('contactName').value = contact.title || 'Unknown';
-        });
-
-        container.appendChild(contactCard);
-    });
-}function displayContacts(contacts) {
     const container = document.querySelector('.contact');
     if (!container) {
         console.error('Contact container not found.');
@@ -228,7 +247,7 @@ function displayChats(messages) {
     messages.forEach((message) => {
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('chat-bubble');
-        
+
         if (message.includes('] You: ')) {
             messageBubble.classList.add('outgoing');
         } else {
@@ -257,8 +276,8 @@ function simulateButtonClickByText(buttonText) {
         let selectedButton = null;
 
         buttons.forEach(button => {
-            const buttonContent = button.querySelector('div > div');
-            if (buttonContent && buttonContent.textContent.trim() === buttonText) {
+            const buttonContent = button.textContent.trim();
+            if (buttonContent === buttonText) {
                 selectedButton = button;
             }
         });
@@ -286,10 +305,27 @@ function simulateButtonClickByText(buttonText) {
             contactItems.forEach(item => {
                 const titleElement = item.querySelector('span[title]');
                 const title = titleElement ? titleElement.getAttribute('title') : 'Unknown';
-                contactList.push({ title });
+
+                // Detect if this contact is a group
+                let isGroup = false;
+
+                // Example: Check for group icon or specific label
+                // You need to adjust the selector based on WhatsApp Web's actual DOM structure
+                // Common indicators might include the presence of a group icon or a "(Group)" suffix
+                const groupIcon = item.querySelector('img[alt="Group"]'); // Adjust selector as needed
+                if (groupIcon) {
+                    isGroup = true;
+                }
+
+                // Alternatively, check if the title contains "(Group)"
+                if (title.endsWith('(Group)')) {
+                    isGroup = true;
+                }
+
+                contactList.push({ title, isGroup });
             });
 
             resolve(contactList);
-        }, 200);
+        }, 500); // Increased delay to ensure the contact list is fully loaded
     });
 }
