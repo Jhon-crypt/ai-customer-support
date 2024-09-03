@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function logLocalStorageContacts() {
-        console.log("Filtering normal contacts:");
+        console.log("Filtering contacts with partial and full matches:");
     
         const allContactsString = localStorage.getItem('allContacts');
         const groupsString = localStorage.getItem('Groups');
@@ -47,32 +47,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const allContacts = JSON.parse(allContactsString);
         const groups = groupsString ? JSON.parse(groupsString) : [];
     
-        if (groups.length === 0) {
-            console.log("Groups: No groups found or empty data");
-        } else {
-            console.log("Groups found:", groups);
-        }
+        // Filter out contacts where the contact title partially or fully matches any group title (case-insensitive)
+        const filteredContacts = allContacts.filter(contact => 
+            !groups.some(group => 
+                contact.title.toLowerCase().includes(group.title.toLowerCase()) || 
+                contact.title.toLowerCase() === group.title.toLowerCase()
+            )
+        );
     
-        // Filter out contacts that are also in groups
-        const normalContacts = allContacts.filter(contact => {
-            const isGroup = groups.some(group => 
-                group.title.trim().toLowerCase() === contact.title.trim().toLowerCase()
-            );
-            if (isGroup) {
-                console.log(`Filtered out group contact: ${contact.title}`);
-            }
-            return !isGroup;
-        });
-        
+        console.log("Filtered Contacts (excluding partially and fully matching groups):", filteredContacts);
     
-        console.log("Normal Contacts (excluding groups):", normalContacts);
-    
-        // Display the filtered normal contacts
-        displayContacts(normalContacts);
+        // Display the filtered contacts
+        displayContacts(filteredContacts);
     }
     
-
-
+    
+    
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
 
