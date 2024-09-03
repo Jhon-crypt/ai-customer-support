@@ -33,36 +33,79 @@ document.addEventListener('DOMContentLoaded', function () {
         logLocalStorageContacts();
     });
 
+    document.getElementById('scrollContactsButton').addEventListener('click', () => {
+        scrollWhatsAppContacts();
+    });
+
+    function scrollWhatsAppContacts() {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: performScrollInWhatsApp
+            });
+        });
+    }
+
+    function performScrollInWhatsApp() {
+        // Variable to keep track of the last scroll position
+        let lastScrollTop = 0;
+
+
+        // Get the container that holds the chat items
+        const chatContainer = document.querySelector('#pane-side');
+
+        if (!chatContainer) {
+            console.error('Chat container not found.');
+            return;
+        }
+
+        // Define the scroll amount (e.g., 100px for each scroll)
+        const scrollAmount = -100;  // Adjust this value as needed
+
+        // Scroll the container down by the defined scroll amount
+        chatContainer.scrollBy({
+            top: scrollAmount,
+            behavior: 'smooth'
+        });
+
+        // Update the last scroll position
+        lastScrollTop += scrollAmount;
+
+        console.log(`Scrolled down by ${scrollAmount}px. New position: ${lastScrollTop}px.`);
+
+
+    }
+
     function logLocalStorageContacts() {
         console.log("Filtering contacts with partial and full matches:");
-    
+
         const allContactsString = localStorage.getItem('allContacts');
         const groupsString = localStorage.getItem('Groups');
-    
+
         if (!allContactsString) {
             console.log("All Contacts: No data found");
             return;
         }
-    
+
         const allContacts = JSON.parse(allContactsString);
         const groups = groupsString ? JSON.parse(groupsString) : [];
-    
+
         // Filter out contacts where the contact title partially or fully matches any group title (case-insensitive)
-        const filteredContacts = allContacts.filter(contact => 
-            !groups.some(group => 
-                contact.title.toLowerCase().includes(group.title.toLowerCase()) || 
+        const filteredContacts = allContacts.filter(contact =>
+            !groups.some(group =>
+                contact.title.toLowerCase().includes(group.title.toLowerCase()) ||
                 contact.title.toLowerCase() === group.title.toLowerCase()
             )
         );
-    
+
         console.log("Filtered Contacts (excluding partially and fully matching groups):", filteredContacts);
-    
+
         // Display the filtered contacts
         displayContacts(filteredContacts);
     }
-    
-    
-    
+
+
+
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
 
