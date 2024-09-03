@@ -33,47 +33,63 @@ document.addEventListener('DOMContentLoaded', function () {
         logLocalStorageContacts();
     });
 
-    document.getElementById('scrollContactsButton').addEventListener('click', () => {
-        scrollWhatsAppContacts();
+    document.getElementById('scrollContactsButtonUp').addEventListener('click', () => {
+        scrollWhatsAppContacts('up');
     });
 
-    function scrollWhatsAppContacts() {
+    document.getElementById('scrollContactsButtonDown').addEventListener('click', () => {
+        scrollWhatsAppContacts('down');
+    });
+
+    function scrollWhatsAppContacts(direction) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
                 target: { tabId: tabs[0].id },
-                func: performScrollInWhatsApp
+                func: performScrollInWhatsApp,
+                args: [direction]
+            }, (results) => {
+                const updatedContacts = results[0].result;
+                displayContacts(updatedContacts);
             });
         });
     }
 
-    function performScrollInWhatsApp() {
-        // Variable to keep track of the last scroll position
-        let lastScrollTop = 0;
+    function scrollWhatsAppContacts(direction) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: performScrollInWhatsApp,
+                args: [direction]
+            }, (results) => {
+                const updatedContacts = results[0].result;
+                displayContacts(updatedContacts);
+            });
+        });
+    }
 
-
-        // Get the container that holds the chat items
+    function performScrollInWhatsApp(direction) {
         const chatContainer = document.querySelector('#pane-side');
-
         if (!chatContainer) {
             console.error('Chat container not found.');
-            return;
+            return [];
         }
 
-        // Define the scroll amount (e.g., 100px for each scroll)
-        const scrollAmount = -100;  // Adjust this value as needed
+        const scrollAmount = direction === 'up' ? -500 : 500;
+        chatContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
 
-        // Scroll the container down by the defined scroll amount
-        chatContainer.scrollBy({
-            top: scrollAmount,
-            behavior: 'smooth'
+        const contactItems = chatContainer.querySelectorAll('.x10l6tqk.xh8yej3.x1g42fcv');
+        const contactList = [];
+
+        contactItems.forEach(item => {
+            const titleElement = item.querySelector('span[title]');
+            const title = titleElement ? titleElement.getAttribute('title') : 'Unknown';
+            const imgElement = item.querySelector('img');
+            const profilePicUrl = imgElement ? imgElement.src : '';
+
+            contactList.push({ title, profilePicUrl });
         });
 
-        // Update the last scroll position
-        lastScrollTop += scrollAmount;
-
-        console.log(`Scrolled down by ${scrollAmount}px. New position: ${lastScrollTop}px.`);
-
-
+        return contactList;
     }
 
     function logLocalStorageContacts() {
@@ -264,7 +280,7 @@ function displayContacts(contacts) {
         const contactCard = document.createElement('div');
         contactCard.classList.add('contact-item');
         contactCard.innerHTML = `
-            <img src="${contact.profilePicUrl || 'logo/profile.webp'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px;"/>
+            <img src="${contact.profilePicUrl || 'images/profile.webp'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px;"/>
                 <span>${contact.title || 'Unknown'}</span>
         `;
 

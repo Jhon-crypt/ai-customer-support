@@ -75,7 +75,8 @@ body {
 }
 
 .fab:hover {
-    background-color: #3700b3;
+    background-color: #8989E5;
+    color:white;
 }
 
 .fab i {
