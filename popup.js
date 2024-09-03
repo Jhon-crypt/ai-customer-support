@@ -29,49 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
         handleButtonClick('Unread');
     });
 
-    // New Event Listener for Contacts
     document.getElementById('contactsButton').addEventListener('click', () => {
-        console.log("john")
-        showLoader(true);
-    
-        // Simulate clicks on both "All" and "Groups" buttons at the same time
-        Promise.all([
-            simulateButtonClickByText('All'),
-            simulateButtonClickByText('Groups')
-        ]).then(([allContacts, groupContacts]) => {
-            console.log('All Contacts:', allContacts);
-            console.log('Group Contacts:', groupContacts);
-    
-            // Store "All" contacts in localStorage
-            localStorage.setItem('allContacts', JSON.stringify(allContacts));
-    
-            // Store "Groups" contacts in localStorage
-            localStorage.setItem('groupContacts', JSON.stringify(groupContacts));
-    
-            // Filter contacts that are in "All" but NOT in "Groups"
-            const normalContacts = allContacts.filter(contact =>
-                !groupContacts.some(groupContact => groupContact.title === contact.title)
-            );
-    
-            console.log('Normal Contacts (Not in Groups):', normalContacts);
-    
-            // Store the filtered normal contacts in localStorage
-            localStorage.setItem('normalContacts', JSON.stringify(normalContacts));
-    
-            // Display the filtered contacts
-            displayContacts(normalContacts);
-    
-            // Optionally, also display all contacts
-            displayContacts(allContacts, 'allContactsContainer');
-    
-            showLoader(false);
-        }).catch(error => {
-            console.error('Error fetching contacts:', error);
-            showLoader(false);
-        });
-    });
-    
 
+    });
 
 
     document.getElementById('fetchChats').addEventListener('click', () => {
@@ -190,12 +150,14 @@ function handleButtonClick(buttonText) {
             args: [buttonText]
         }, (results) => {
             let contactList = results[0].result;
-
-            // If the Contacts button is clicked, filter out groups
-            if (buttonText === 'Contacts') {
-                contactList = contactList.filter(contact => !contact.isGroup);
+            if (buttonText === 'All') {
+                localStorage.setItem('allUsers', JSON.stringify(contactList));
+                console.log("All users stored in local storage");
             }
-
+            if (buttonText === 'Groups') {
+                localStorage.setItem('Groups', JSON.stringify(contactList));
+                console.log("All contacts stored in local storage");
+            }
             displayContacts(contactList);
             showLoader(false);
         });
@@ -214,7 +176,8 @@ function displayContacts(contacts) {
         const contactCard = document.createElement('div');
         contactCard.classList.add('contact-item');
         contactCard.innerHTML = `
-            <span><img src="logo/profile.webp" style="width:30px"/>${contact.title || 'Unknown'}</span><br>
+            <img src="${contact.profilePicUrl || 'logo/profile.webp'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px;"/>
+                <span>${contact.title || 'Unknown'}</span>
         `;
 
         contactCard.addEventListener('click', () => {
@@ -309,9 +272,7 @@ function simulateButtonClickByText(buttonText) {
                 // Detect if this contact is a group
                 let isGroup = false;
 
-                // Example: Check for group icon or specific label
-                // You need to adjust the selector based on WhatsApp Web's actual DOM structure
-                // Common indicators might include the presence of a group icon or a "(Group)" suffix
+                // Check for group icon or specific label
                 const groupIcon = item.querySelector('img[alt="Group"]'); // Adjust selector as needed
                 if (groupIcon) {
                     isGroup = true;
@@ -322,7 +283,10 @@ function simulateButtonClickByText(buttonText) {
                     isGroup = true;
                 }
 
-                contactList.push({ title, isGroup });
+                const imgElement = item.querySelector('img');
+                const profilePicUrl = imgElement ? imgElement.src : '';
+
+                contactList.push({ title, profilePicUrl });
             });
 
             resolve(contactList);
