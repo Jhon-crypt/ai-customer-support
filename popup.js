@@ -30,8 +30,47 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('contactsButton').addEventListener('click', () => {
-
+        logLocalStorageContacts();
     });
+
+    function logLocalStorageContacts() {
+        console.log("Filtering normal contacts:");
+    
+        const allContactsString = localStorage.getItem('allContacts');
+        const groupsString = localStorage.getItem('Groups');
+    
+        if (!allContactsString) {
+            console.log("All Contacts: No data found");
+            return;
+        }
+    
+        const allContacts = JSON.parse(allContactsString);
+        const groups = groupsString ? JSON.parse(groupsString) : [];
+    
+        if (groups.length === 0) {
+            console.log("Groups: No groups found or empty data");
+        } else {
+            console.log("Groups found:", groups);
+        }
+    
+        // Filter out contacts that are also in groups
+        const normalContacts = allContacts.filter(contact => {
+            const isGroup = groups.some(group => 
+                group.title.trim().toLowerCase() === contact.title.trim().toLowerCase()
+            );
+            if (isGroup) {
+                console.log(`Filtered out group contact: ${contact.title}`);
+            }
+            return !isGroup;
+        });
+        
+    
+        console.log("Normal Contacts (excluding groups):", normalContacts);
+    
+        // Display the filtered normal contacts
+        displayContacts(normalContacts);
+    }
+    
 
 
     document.getElementById('fetchChats').addEventListener('click', () => {
@@ -151,12 +190,28 @@ function handleButtonClick(buttonText) {
         }, (results) => {
             let contactList = results[0].result;
             if (buttonText === 'All') {
-                localStorage.setItem('allUsers', JSON.stringify(contactList));
-                console.log("All users stored in local storage");
+                if (localStorage.getItem('allContacts')) {
+                    // If the key exists, clear it and store new data
+                    localStorage.removeItem('allContacts');
+                    localStorage.setItem('allContacts', JSON.stringify(contactList));
+                    console.log("Existing data cleared and new allContacts stored in local storage");
+                } else {
+                    // If the key doesn't exist, store directly
+                    localStorage.setItem('allContacts', JSON.stringify(contactList));
+                    console.log("New allContacts stored in local storage");
+                }
             }
             if (buttonText === 'Groups') {
-                localStorage.setItem('Groups', JSON.stringify(contactList));
-                console.log("All contacts stored in local storage");
+                if (localStorage.getItem('Groups')) {
+                    // If the key exists, clear it and store new data
+                    localStorage.removeItem('Groups');
+                    localStorage.setItem('Groups', JSON.stringify(contactList));
+                    console.log("Existing data cleared and new Groups stored in local storage");
+                } else {
+                    // If the key doesn't exist, store directly
+                    localStorage.setItem('Groups', JSON.stringify(contactList));
+                    console.log("New Groups stored in local storage");
+                }
             }
             displayContacts(contactList);
             showLoader(false);
