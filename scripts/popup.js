@@ -115,12 +115,9 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         console.log("Filtered Contacts (excluding partially and fully matching groups):", filteredContacts);
-
         // Display the filtered contacts
         displayContacts(filteredContacts);
     }
-
-
 
     document.getElementById('fetchChats').addEventListener('click', () => {
         const contactName = document.getElementById('contactName').value;
@@ -221,13 +218,20 @@ function extractWhatsAppChats() {
         const messageText = container.querySelector('span.selectable-text');
         if (messageText) {
             const prePlainText = container.getAttribute('data-pre-plain-text');
-            const fullMessage = prePlainText + messageText.innerText;
-            messages.push(fullMessage);
+            const timeMatch = prePlainText.match(/\[(.*?)\]/); // Extract the timestamp part
+            const time = timeMatch ? timeMatch[1] : ''; // Get the time from the match
+            const cleanedMessage = prePlainText.replace(/\[(.*?)\]\s*/, ''); // Remove the timestamp from the message
+
+            const fullMessage = cleanedMessage + messageText.innerText;
+            const messageType = fullMessage.includes('You: ') ? 'message-out' : 'message-in';
+
+            messages.push({ text: fullMessage, type: messageType, time: time });
         }
     });
 
     return messages;
 }
+
 
 function handleButtonClick(buttonText) {
     showLoader(true);
@@ -309,22 +313,22 @@ function displayChats(messages) {
         console.error('Chat box not found.');
         return;
     }
-    chatBox.innerHTML = '';
+    chatBox.innerHTML = '';  // Clear previous chat history
 
-    messages.forEach((message) => {
+    messages.forEach((messageObj) => {
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('chat-bubble');
 
-        if (message.includes('] You: ')) {
-            messageBubble.classList.add('outgoing');
-        } else {
-            messageBubble.classList.add('incoming');
-        }
+        // Apply 'message-in' or 'message-out' class based on the message type
+        messageBubble.classList.add(messageObj.type);
 
-        messageBubble.textContent = message;
+        // Set the content of the message
+        messageBubble.textContent = messageObj.text;
         chatBox.appendChild(messageBubble);
     });
 }
+
+
 
 function showLoader(show) {
     const loader = document.getElementById('loader');
@@ -374,17 +378,14 @@ function simulateButtonClickByText(buttonText) {
                 const title = titleElement ? titleElement.getAttribute('title') : 'Unknown';
 
                 // Detect if this contact is a group
-                let isGroup = false;
 
                 // Check for group icon or specific label
                 const groupIcon = item.querySelector('img[alt="Group"]'); // Adjust selector as needed
                 if (groupIcon) {
-                    isGroup = true;
                 }
 
                 // Alternatively, check if the title contains "(Group)"
                 if (title.endsWith('(Group)')) {
-                    isGroup = true;
                 }
 
                 const imgElement = item.querySelector('img');

@@ -17,36 +17,42 @@ body {
     background-color: #f8f9fa;
 }
 
+/* Container for the chat messages */
+.chat-box {
+    max-height: 300px;
+    overflow-y: scroll;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Base styling for the chat bubbles */
 .chat-bubble {
-    max-width: 80%;
+    margin-bottom: 10px;
     padding: 10px 15px;
     border-radius: 20px;
-    margin-bottom: 10px;
-    position: relative;
-    display: inline-block;
-    clear: both;
+    width: fit-content;
+    max-width: 80%;
+    word-wrap: break-word;
 }
 
-.chat-bubble.incoming {
-    background-color: #f1f0f0;
-    align-self: flex-start;
-}
-
-.chat-bubble.outgoing {
+/* Outgoing message styles (sent by you) */
+.message-out {
     background-color: #dcf8c6;
     align-self: flex-end;
+    text-align: right;
     margin-left: auto;
 }
 
-.chat-box {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    max-height: 300px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
+/* Incoming message styles (received) */
+.message-in {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    align-self: flex-start;
+    text-align: left;
 }
+
 
 /* Basic styling for the buttons */
 .fab-container {
