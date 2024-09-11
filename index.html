@@ -51,11 +51,22 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="searchContact" role="tabpanel" aria-labelledby="search-tab">
-                <input type="text" id="contactName" class="form-control" placeholder="Enter contact name">
-                <button class="btn btn-success mt-2" id="fetchChats">Fetch Chats</button>
+                <div class="mb-4">
+                    <input type="text" id="contactName" class="form-control" placeholder="Enter contact name">
+                    <button class="btn btn-success mt-2" id="fetchChats">Fetch Chats</button>
+                </div>
 
-                <div id="chatBox" class="chat-box mt-3"></div>
-                
+                <div class="d-flex justify-content-center align-items-center">
+                    <button id="superScrollChats" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                        See previous chats
+                    </button>
+                </div>
+
+                <div id="chatBox" class="chat-box">
+
+
+                </div>
+
                 <div class="d-flex justify-content-center align--center">
                     <div id="loader" class="spinner-border text-success mt-3" role="status" style="display:none;">
                         <span class="sr-only">Loading...</span>
@@ -65,7 +76,7 @@
         </div>
     </div>
     <!-- Fixed action button container -->
-    <div class="fab-container">
+    <div class="scroll-control fab-container">
         <!-- First button -->
         <button class="fab" id="scrollContactsButtonUp">
             <i class="bi-caret-up-fill mb-2"></i>

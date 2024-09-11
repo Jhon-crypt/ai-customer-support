@@ -41,6 +41,83 @@ document.addEventListener('DOMContentLoaded', function () {
         scrollWhatsAppContacts('down');
     });
 
+    document.getElementById('superScrollChats').addEventListener('click', () => {
+        scrollMessagesUp(100);
+    });
+
+    function scrollMessagesUp(pixels) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: performScrollInChat,
+                args: [pixels]
+            }, (results) => {
+                // You can handle results here if needed
+            });
+        });
+    }// Scroll chats and update messages
+function scrollMessagesUp(pixels) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: performScrollInChat,
+            args: [pixels]
+        }, () => {
+            // Add a delay to ensure scrolling completes
+           
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    func: extractWhatsAppChats
+                }, (results) => {
+                    const messages = results[0].result;
+                    displayChats(messages);
+                });
+            
+        });
+    });
+}
+
+// Scroll contacts and update contact list
+function scrollWhatsAppContacts(direction) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: performScrollInWhatsApp,
+            args: [direction]
+        }, (results) => {
+            const updatedContacts = results[0].result;
+            displayContacts(updatedContacts);
+        });
+    });
+}
+
+
+    // Function to scroll chat messages up
+    function performScrollInChat(pixels) {
+        const element = document.querySelector('div._ajyl[tabindex="0"]');
+        
+        if (!element) {
+            console.error('Element with class "_ajyl" and tabindex="0" not found');
+            return;
+        }
+    
+        const isScrollable = element.scrollHeight > element.clientHeight;
+    
+        if (!isScrollable) {
+            console.log('The element is not scrollable');
+            return;
+        }
+    
+        const newScrollTop = Math.max(0, element.scrollTop - pixels);
+    
+        element.scrollTo({
+            top: newScrollTop,
+            behavior: 'smooth'
+        });
+    
+        console.log(`Scrolled up by ${Math.min(pixels, element.scrollTop)} pixels`);
+    }
+
     function scrollWhatsAppContacts(direction) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
@@ -223,12 +300,17 @@ function extractWhatsAppChats() {
             const cleanedMessage = prePlainText.replace(/\[(.*?)\]\s*/, ''); // Remove the timestamp from the message
 
             const fullMessage = cleanedMessage + messageText.innerText;
-            const messageType = fullMessage.includes('You: ') ? 'message-out' : 'message-in';
+            let messageType = '';
+            if (container.closest('.message-out')) {
+                messageType = 'message-out'; // Outgoing message
+            } else if (container.closest('.message-in')) {
+                messageType = 'message-in';  // Incoming message
+            }
 
             messages.push({ text: fullMessage, type: messageType, time: time });
         }
     });
-
+    console.log('Extracted messages:', messages);
     return messages;
 }
 
@@ -316,18 +398,31 @@ function displayChats(messages) {
     chatBox.innerHTML = '';  // Clear previous chat history
 
     messages.forEach((messageObj) => {
+
+        // Create the chat bubble container
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('chat-bubble');
 
         // Apply 'message-in' or 'message-out' class based on the message type
         messageBubble.classList.add(messageObj.type);
 
-        // Set the content of the message
-        messageBubble.textContent = messageObj.text;
+        // Create a span for the message text
+        const messageText = document.createElement('span');
+        messageText.textContent = messageObj.text;
+
+        // Create a div for the time/date and set the content
+        const messageTime = document.createElement('div');
+        messageTime.classList.add('message-time');
+        messageTime.textContent = messageObj.time || '';  // Show time if available
+
+        // Append the message text and time to the chat bubble
+        messageBubble.appendChild(messageText);
+        messageBubble.appendChild(messageTime);
+
+        // Append the chat bubble to the chat box
         chatBox.appendChild(messageBubble);
     });
 }
-
 
 
 function showLoader(show) {

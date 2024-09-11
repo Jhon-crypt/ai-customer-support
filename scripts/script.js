@@ -54,3 +54,39 @@ function searchWhatsAppContacts(query) {
 initiateNewWhatsAppChat()
 // Example usage:
 searchWhatsAppContacts('Moniflow');
+
+//
+/*
+function scrollMessagesUp(pixels = 100) {
+    // Find the element with class "_ajyl" and tabindex="0"
+    const element = document.querySelector('div._ajyl[tabindex="0"]');
+    
+    if (!element) {
+        console.error('Element with class "_ajyl" and tabindex="0" not found');
+        return;
+    }
+
+    // Check if the element is scrollable
+    const isScrollable = element.scrollHeight > element.clientHeight;
+
+    if (!isScrollable) {
+        console.log('The element is not scrollable');
+        return;
+    }
+
+    // Calculate the new scroll position
+    const newScrollTop = Math.max(0, element.scrollTop - pixels);
+
+    // Scroll up
+    element.scrollTo({
+        top: newScrollTop,
+        behavior: 'smooth'
+    });
+
+    console.log(`Scrolled up by ${Math.min(pixels, element.scrollTop)} pixels`);
+}
+
+// Run the scrollUp function
+// You can change the number of pixels to scroll here
+scrollMessagesUp(100);
+*/
