@@ -56,15 +56,15 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }// Scroll chats and update messages
-function scrollMessagesUp(pixels) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: performScrollInChat,
-            args: [pixels]
-        }, () => {
-            // Add a delay to ensure scrolling completes
-           
+    function scrollMessagesUp(pixels) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: performScrollInChat,
+                args: [pixels]
+            }, () => {
+                // Add a delay to ensure scrolling completes
+
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
                     func: extractWhatsAppChats
@@ -72,49 +72,49 @@ function scrollMessagesUp(pixels) {
                     const messages = results[0].result;
                     displayChats(messages);
                 });
-            
-        });
-    });
-}
 
-// Scroll contacts and update contact list
-function scrollWhatsAppContacts(direction) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: performScrollInWhatsApp,
-            args: [direction]
-        }, (results) => {
-            const updatedContacts = results[0].result;
-            displayContacts(updatedContacts);
+            });
         });
-    });
-}
+    }
+
+    // Scroll contacts and update contact list
+    function scrollWhatsAppContacts(direction) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: performScrollInWhatsApp,
+                args: [direction]
+            }, (results) => {
+                const updatedContacts = results[0].result;
+                displayContacts(updatedContacts);
+            });
+        });
+    }
 
 
     // Function to scroll chat messages up
     function performScrollInChat(pixels) {
         const element = document.querySelector('div._ajyl[tabindex="0"]');
-        
+
         if (!element) {
             console.error('Element with class "_ajyl" and tabindex="0" not found');
             return;
         }
-    
+
         const isScrollable = element.scrollHeight > element.clientHeight;
-    
+
         if (!isScrollable) {
             console.log('The element is not scrollable');
             return;
         }
-    
+
         const newScrollTop = Math.max(0, element.scrollTop - pixels);
-    
+
         element.scrollTo({
             top: newScrollTop,
             behavior: 'smooth'
         });
-    
+
         console.log(`Scrolled up by ${Math.min(pixels, element.scrollTop)} pixels`);
     }
 
