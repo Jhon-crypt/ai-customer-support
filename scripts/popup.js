@@ -1,5 +1,8 @@
-document.getElementById('activateAI').addEventListener('click', async () => {
-    console.log("Button clicked");
+let isWhatsAppConnected = false;  // This variable will track the state of the connection
+
+// Function to handle connecting WhatsApp
+async function handleWhatsAppConnection() {
+    console.log("Button clicked for WhatsApp connection");
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Show the loading message
@@ -7,7 +10,9 @@ document.getElementById('activateAI').addEventListener('click', async () => {
     console.log("Loading message element:", loadingMessage);
     loadingMessage.classList.remove('hidden');
     loadingMessage.classList.add('visible');
-    //console.log("Loading message classes:", loadingMessage.classList);
+
+    let progressBar = document.querySelector('.progress-bar');
+    let badge = document.querySelector('.badge');
 
     // Function to be injected into the WhatsApp page
     function scrollAndFetchChats() {
@@ -51,7 +56,7 @@ document.getElementById('activateAI').addEventListener('click', async () => {
                 behavior: 'auto'
             });
             // Send a message back to the popup script indicating success
-        chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true });
+            chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true });
         }
 
         const scrollTimer = setInterval(scrollAndFetch, scrollInterval);
@@ -70,7 +75,45 @@ document.getElementById('activateAI').addEventListener('click', async () => {
             // Hide loading message
             loadingMessage.classList.remove('visible');
             loadingMessage.classList.add('hidden');
+
+            // Increase progress bar to 100%
+            progressBar.style.width = '100%';
+            progressBar.classList.add('bg-success');
+
+            // Change the badge to success
+            badge.classList.remove('text-bg-warning');
+            badge.classList.add('text-bg-success');
+            badge.innerHTML = 'WhatsApp connected <i class="bi-check-circle"></i>';
+
+            // Change the button text to "Connect your messages" after successful connection
+            let connectButton = document.getElementById('activateAI');
+            connectButton.innerHTML = 'Connect your messages <i class="bi-envelope"></i>';
+            isWhatsAppConnected = true;  // Update the state
         }
     });
+}
 
+// Function to handle connecting messages
+async function handleMessagesConnection() {
+    console.log("Button clicked for Messages connection");
+    // Add your logic for handling the messages connection here
+
+    // For now, just update the button and progress bar for demonstration
+    let loadingMessage = document.getElementById('loadingMessage');
+    let progressBar = document.querySelector('.progress-bar');
+    let badge = document.querySelector('.badge');
+    
+    progressBar.style.width = '100%';  // Adjust as needed
+    badge.innerHTML = 'Messages connected <i class="bi-envelope-check"></i>';
+
+    loadingMessage.classList.add('hidden');
+}
+
+// Add an event listener to handle the button click
+document.getElementById('activateAI').addEventListener('click', async () => {
+    if (isWhatsAppConnected) {
+        await handleMessagesConnection();  // Handle messages connection after WhatsApp is connected
+    } else {
+        await handleWhatsAppConnection();  // Initially handle WhatsApp connection
+    }
 });
