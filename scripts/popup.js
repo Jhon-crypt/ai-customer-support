@@ -3,11 +3,11 @@ document.getElementById('activateAI').addEventListener('click', async () => {
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Show the loading message
-    const loadingMessage = document.getElementById('loadingMessage');
+    let loadingMessage = document.getElementById('loadingMessage');
     console.log("Loading message element:", loadingMessage);
     loadingMessage.classList.remove('hidden');
     loadingMessage.classList.add('visible');
-    console.log("Loading message classes:", loadingMessage.classList);
+    //console.log("Loading message classes:", loadingMessage.classList);
 
     // Function to be injected into the WhatsApp page
     function scrollAndFetchChats() {
@@ -44,13 +44,14 @@ document.getElementById('activateAI').addEventListener('click', async () => {
         }
 
         function scrollToTop() {
+            let loadingMessage = document.getElementById('loadingMessage');
+            console.log("Loading end element:", loadingMessage);
             chatContainer.scrollTo({
                 top: 0,
                 behavior: 'auto'
             });
-            console.log("Scrolled back to the top!");
-            // Notify the popup script that scrolling is complete
-            window.postMessage({ action: 'scrollCompleted' }, '*');
+            // Send a message back to the popup script indicating success
+        chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true });
         }
 
         const scrollTimer = setInterval(scrollAndFetch, scrollInterval);
@@ -63,15 +64,13 @@ document.getElementById('activateAI').addEventListener('click', async () => {
     });
 
     // Listen for the message from the content script
-    window.addEventListener('message', (event) => {
-        if (event.data.action === 'scrollCompleted') {
-            // Hide the loading message when scrolling is complete
-            const loadingMessage = document.getElementById('loadingMessage');
-            if (loadingMessage) {
-                loadingMessage.classList.remove('visible');
-                loadingMessage.classList.add('hidden');
-                console.log("Loading message hidden.");
-            }
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'scrollCompleted' && message.success) {
+            console.log("Scroll to top completed successfully!");
+            // Hide loading message
+            loadingMessage.classList.remove('visible');
+            loadingMessage.classList.add('hidden');
         }
     });
+
 });
