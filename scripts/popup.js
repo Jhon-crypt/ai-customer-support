@@ -143,27 +143,12 @@ async function handleWhatsAppConnection() {
         loadingMessage.classList.remove('visible');
         loadingMessage.classList.add('hidden');
 
-        // Set final progress state
-        progress = 100;
+        // Set progress up to 75%
         progressBar.style.width = `${progress}%`;
         badge.innerHTML = 'Connection Finalized <i class="bi-check-circle"></i>';
 
         // Change button text to "Connect Your Chats"
         button.innerHTML = 'Connect Your Chats <i class="bi-chat-dots"></i>';
-
-        // Switch back to "All" chats without scrolling
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'All');
-                if (button) {
-                    button.click();
-                    console.log('Switched to All chats');
-                } else {
-                    console.log('All button not found');
-                }
-            }
-        });
     }
 }
 
@@ -179,7 +164,7 @@ async function handleConnectChats() {
     badge.innerHTML = 'All Chats Connected <i class="bi-check-circle"></i>';
 
     // Update button text to reflect final state
-    document.getElementById('activateAI').innerHTML = 'All Chats Connected <i class="bi-chat-dots"></i>';
+    document.getElementById('activateAI').innerHTML = 'All Chats Connected <i class="bi-whatsapp"></i>';
 
     // Stop the loader if visible
     let loadingMessage = document.getElementById('loadingMessage');
@@ -187,11 +172,27 @@ async function handleConnectChats() {
         loadingMessage.classList.remove('visible');
         loadingMessage.classList.add('hidden');
     }
+
+    // Switch back to "All" chats without scrolling
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+            // Click on the "All" chats button without scrolling
+            const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'All');
+            if (button) {
+                button.click();
+                console.log('Switched back to All chats');
+            } else {
+                console.log('All button not found');
+            }
+        }
+    });
 }
 
 // Add an event listener to handle the button click
 document.getElementById('activateAI').addEventListener('click', async () => {
-    let buttonText = document.getElementById('activateAI').textContent.trim();
+    let buttonText = document.getElementById('activateAI').innerHTML.trim();
     if (buttonText === 'Connect Your Chats <i class="bi-chat-dots"></i>') {
         await handleConnectChats();  // Handle connect chats button
     } else {
