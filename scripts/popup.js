@@ -1,25 +1,39 @@
 let isWhatsAppConnected = false;  // This variable will track the state of the connection
+let progress = 0;  // This will track the progress percentage
 
-// Function to handle connecting WhatsApp
+// Function to handle connecting WhatsApp contacts in stages
 async function handleWhatsAppConnection() {
     console.log("Button clicked for WhatsApp connection");
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Show the loading message
     let loadingMessage = document.getElementById('loadingMessage');
-    console.log("Loading message element:", loadingMessage);
     loadingMessage.classList.remove('hidden');
     loadingMessage.classList.add('visible');
 
     let progressBar = document.querySelector('.progress-bar');
     let badge = document.querySelector('.badge');
 
-    // Function to be injected into the WhatsApp page
-    function scrollAndFetchChats() {
+    // Function to be injected into the WhatsApp page to fetch chat names
+    function scrollAndFetchChats(type) {
         const chatContainer = document.querySelector('#pane-side');
         let chatNames = [];
         const scrollAmount = 500;
         const scrollInterval = 200;
+
+        // Function to simulate clicks on the specified buttons
+        function simulateClick(selectorText) {
+            const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === selectorText);
+            if (button) {
+                button.click();
+                console.log(`${selectorText} button clicked`);
+            } else {
+                console.log(`${selectorText} button not found`);
+            }
+        }
+
+        // Simulate click on the appropriate button based on the chat type
+        simulateClick(type);
 
         function fetchChatNames() {
             const chatElements = document.querySelectorAll('div[role="listitem"]');
@@ -49,71 +63,104 @@ async function handleWhatsAppConnection() {
         }
 
         function scrollToTop() {
-            let loadingMessage = document.getElementById('loadingMessage');
-            console.log("Loading end element:", loadingMessage);
             chatContainer.scrollTo({
                 top: 0,
                 behavior: 'auto'
             });
-            // Send a message back to the popup script indicating success
             chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true });
         }
 
         const scrollTimer = setInterval(scrollAndFetch, scrollInterval);
     }
 
-    // Inject the scrollAndFetchChats function into the WhatsApp page
+    // Inject the scrollAndFetchChats function into the WhatsApp page, initially for "All" chats
     chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: scrollAndFetchChats,
+        args: ['All']  // Initial fetch for 'All' chats
     });
 
     // Listen for the message from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'scrollCompleted' && message.success) {
-            console.log("Scroll to top completed successfully!");
-            // Hide loading message
-            loadingMessage.classList.remove('visible');
-            loadingMessage.classList.add('hidden');
-
-            // Increase progress bar to 100%
-            progressBar.style.width = '100%';
-            progressBar.classList.add('bg-success');
-
-            // Change the badge to success
-            badge.classList.remove('text-bg-warning');
-            badge.classList.add('text-bg-success');
-            badge.innerHTML = 'WhatsApp connected <i class="bi-check-circle"></i>';
-
-            // Change the button text to "Connect your messages" after successful connection
-            let connectButton = document.getElementById('activateAI');
-            connectButton.innerHTML = 'Connect your messages <i class="bi-envelope"></i>';
-            isWhatsAppConnected = true;  // Update the state
+            updateProgressAndNextStage();
         }
     });
-}
 
-// Function to handle connecting messages
-async function handleMessagesConnection() {
-    console.log("Button clicked for Messages connection");
-    // Add your logic for handling the messages connection here
+    // Function to handle progress and update the button and progress bar
+    function updateProgressAndNextStage() {
+        // Hide loading message
+        loadingMessage.classList.remove('visible');
+        loadingMessage.classList.add('hidden');
 
-    // For now, just update the button and progress bar for demonstration
-    let loadingMessage = document.getElementById('loadingMessage');
-    let progressBar = document.querySelector('.progress-bar');
-    let badge = document.querySelector('.badge');
-    
-    progressBar.style.width = '100%';  // Adjust as needed
-    badge.innerHTML = 'Messages connected <i class="bi-envelope-check"></i>';
+        // Increment the progress bar and update text
+        if (progress === 0) {
+            // After "All" contacts are fetched
+            progress = 25;
+            progressBar.style.width = `${progress}%`;
+            badge.classList.remove('text-bg-warning');
+            badge.classList.add('text-bg-success');
+            badge.innerHTML = 'Fetched All Contacts <i class="bi-check-circle"></i>';
 
-    loadingMessage.classList.add('hidden');
+            // Now fetch unread contacts
+            simulateUnreadFetch();
+        } else if (progress === 25) {
+            // After "Unread" contacts are fetched
+            progress = 50;
+            progressBar.style.width = `${progress}%`;
+            badge.innerHTML = 'Fetched Unread Contacts <i class="bi-check-circle"></i>';
+
+            // Now fetch group contacts
+            simulateGroupFetch();
+        } else if (progress === 50) {
+            // After "Group" contacts are fetched
+            progress = 75;
+            progressBar.style.width = `${progress}%`;
+            badge.innerHTML = 'Fetched Group Contacts <i class="bi-check-circle"></i>';
+
+            // Now switch back to all contacts
+            simulateAllFetch();
+        } else if (progress === 75) {
+            // Final state
+            progress = 100;
+            progressBar.style.width = `${progress}%`;
+            badge.innerHTML = 'Connection Finalized <i class="bi-check-circle"></i>';
+            document.getElementById('activateAI').innerHTML = 'Connected <i class="bi-whatsapp"></i>';
+        }
+    }
+
+    // Simulate fetching unread contacts
+    function simulateUnreadFetch() {
+        loadingMessage.classList.remove('hidden');
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scrollAndFetchChats,
+            args: ['Unread']  // Fetch unread contacts
+        });
+    }
+
+    // Simulate fetching group contacts
+    function simulateGroupFetch() {
+        loadingMessage.classList.remove('hidden');
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scrollAndFetchChats,
+            args: ['Groups']  // Fetch group contacts
+        });
+    }
+
+    // Simulate switching back to fetching all contacts after groups
+    function simulateAllFetch() {
+        loadingMessage.classList.remove('hidden');
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scrollAndFetchChats,
+            args: ['All']  // Switch back to all chats
+        });
+    }
 }
 
 // Add an event listener to handle the button click
 document.getElementById('activateAI').addEventListener('click', async () => {
-    if (isWhatsAppConnected) {
-        await handleMessagesConnection();  // Handle messages connection after WhatsApp is connected
-    } else {
-        await handleWhatsAppConnection();  // Initially handle WhatsApp connection
-    }
+    await handleWhatsAppConnection();
 });
