@@ -6,13 +6,16 @@ async function handleWhatsAppConnection() {
     console.log("Button clicked for WhatsApp connection");
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    // Show the loading message
     let loadingMessage = document.getElementById('loadingMessage');
-    loadingMessage.classList.remove('hidden');
-    loadingMessage.classList.add('visible');
-
     let progressBar = document.querySelector('.progress-bar');
     let badge = document.querySelector('.badge');
+    let button = document.getElementById('activateAI');
+
+    // Show the loading message
+    if (progress === 0 || progress < 75) {
+        loadingMessage.classList.remove('hidden');
+        loadingMessage.classList.add('visible');
+    }
 
     // Function to be injected into the WhatsApp page to fetch chat names
     function scrollAndFetchChats(type) {
@@ -74,11 +77,13 @@ async function handleWhatsAppConnection() {
     }
 
     // Inject the scrollAndFetchChats function into the WhatsApp page, initially for "All" chats
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: scrollAndFetchChats,
-        args: ['All']  // Initial fetch for 'All' chats
-    });
+    if (progress < 75) {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scrollAndFetchChats,
+            args: ['All']  // Initial fetch for 'All' chats
+        });
+    }
 
     // Listen for the message from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -89,78 +94,107 @@ async function handleWhatsAppConnection() {
 
     // Function to handle progress and update the button and progress bar
     function updateProgressAndNextStage() {
-        // Hide loading message
-        loadingMessage.classList.remove('visible');
-        loadingMessage.classList.add('hidden');
-
         // Increment the progress bar and update text
         if (progress === 0) {
-            // After "All" contacts are fetched
             progress = 25;
             progressBar.style.width = `${progress}%`;
             badge.classList.remove('text-bg-warning');
             badge.classList.add('text-bg-success');
             badge.innerHTML = 'Fetched All Contacts <i class="bi-check-circle"></i>';
-
-            // Now fetch unread contacts
             simulateUnreadFetch();
         } else if (progress === 25) {
-            // After "Unread" contacts are fetched
             progress = 50;
             progressBar.style.width = `${progress}%`;
             badge.innerHTML = 'Fetched Unread Contacts <i class="bi-check-circle"></i>';
-
-            // Now fetch group contacts
             simulateGroupFetch();
         } else if (progress === 50) {
-            // After "Group" contacts are fetched
             progress = 75;
             progressBar.style.width = `${progress}%`;
             badge.innerHTML = 'Fetched Group Contacts <i class="bi-check-circle"></i>';
-
-            // Now switch back to all contacts
-            simulateAllFetch();
-        } else if (progress === 75) {
-            // Final state
-            progress = 100;
-            progressBar.style.width = `${progress}%`;
-            badge.innerHTML = 'Connection Finalized <i class="bi-check-circle"></i>';
-            document.getElementById('activateAI').innerHTML = 'Connected <i class="bi-whatsapp"></i>';
+            finalizeConnection();
         }
     }
 
     // Simulate fetching unread contacts
     function simulateUnreadFetch() {
-        loadingMessage.classList.remove('hidden');
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: scrollAndFetchChats,
-            args: ['Unread']  // Fetch unread contacts
-        });
+        if (progress < 75) {
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: scrollAndFetchChats,
+                args: ['Unread']  // Fetch unread contacts
+            });
+        }
     }
 
     // Simulate fetching group contacts
     function simulateGroupFetch() {
-        loadingMessage.classList.remove('hidden');
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: scrollAndFetchChats,
-            args: ['Groups']  // Fetch group contacts
-        });
+        if (progress < 75) {
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: scrollAndFetchChats,
+                args: ['Groups']  // Fetch group contacts
+            });
+        }
     }
 
-    // Simulate switching back to fetching all contacts after groups
-    function simulateAllFetch() {
-        loadingMessage.classList.remove('hidden');
+    // Finalize connection and update UI
+    function finalizeConnection() {
+        // Stop the loader
+        loadingMessage.classList.remove('visible');
+        loadingMessage.classList.add('hidden');
+
+        // Set final progress state
+        progress = 100;
+        progressBar.style.width = `${progress}%`;
+        badge.innerHTML = 'Connection Finalized <i class="bi-check-circle"></i>';
+
+        // Change button text to "Connect Your Chats"
+        button.innerHTML = 'Connect Your Chats <i class="bi-chat-dots"></i>';
+
+        // Switch back to "All" chats without scrolling
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: scrollAndFetchChats,
-            args: ['All']  // Switch back to all chats
+            func: () => {
+                const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'All');
+                if (button) {
+                    button.click();
+                    console.log('Switched to All chats');
+                } else {
+                    console.log('All button not found');
+                }
+            }
         });
+    }
+}
+
+// Function to handle connecting chats, no scrolling involved
+async function handleConnectChats() {
+    console.log("Button clicked for Connect Your Chats");
+    let progressBar = document.querySelector('.progress-bar');
+    let badge = document.querySelector('.badge');
+
+    // Update progress bar to 100%
+    progress = 100;
+    progressBar.style.width = `${progress}%`;
+    badge.innerHTML = 'All Chats Connected <i class="bi-check-circle"></i>';
+
+    // Update button text to reflect final state
+    document.getElementById('activateAI').innerHTML = 'All Chats Connected <i class="bi-chat-dots"></i>';
+
+    // Stop the loader if visible
+    let loadingMessage = document.getElementById('loadingMessage');
+    if (loadingMessage.classList.contains('visible')) {
+        loadingMessage.classList.remove('visible');
+        loadingMessage.classList.add('hidden');
     }
 }
 
 // Add an event listener to handle the button click
 document.getElementById('activateAI').addEventListener('click', async () => {
-    await handleWhatsAppConnection();
+    let buttonText = document.getElementById('activateAI').textContent.trim();
+    if (buttonText === 'Connect Your Chats <i class="bi-chat-dots"></i>') {
+        await handleConnectChats();  // Handle connect chats button
+    } else {
+        await handleWhatsAppConnection();  // Handle WhatsApp connection
+    }
 });
