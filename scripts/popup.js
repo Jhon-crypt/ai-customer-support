@@ -17,8 +17,16 @@ async function handleWhatsAppConnection() {
         loadingMessage.classList.add('visible');
     }
 
-    // Function to be injected into the WhatsApp page to fetch chat names
+    // Function to handle scrolling and fetching chats
     function scrollAndFetchChats(type) {
+
+        // Function to store chat names in local storage
+        function storeChatNames(type, chatNames) {
+            //storing chats by items into local storage
+            localStorage.setItem(type, JSON.stringify(chatNames));
+            console.log(`Stored ${type} chat names:`, chatNames);
+        }
+
         const chatContainer = document.querySelector('#pane-side');
         let chatNames = [];
         const scrollAmount = 500;
@@ -61,6 +69,8 @@ async function handleWhatsAppConnection() {
             if (currentScrollPosition + chatContainer.clientHeight >= scrollHeight) {
                 clearInterval(scrollTimer);
                 console.log(JSON.stringify(chatNames, null, 2));
+                // Store chat names in local storage
+                storeChatNames(type, chatNames);
                 scrollToTop();
             }
         }
@@ -85,7 +95,7 @@ async function handleWhatsAppConnection() {
         });
     }
 
-    // Listen for the message from the content script
+    // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'scrollCompleted' && message.success) {
             updateProgressAndNextStage();
