@@ -269,7 +269,7 @@ function searchWhatsAppContacts(query) {
 
         setTimeout(() => {
             document.execCommand('insertText', false, query);
-
+ 
             setTimeout(() => {
                 const enterEvent = new KeyboardEvent('keydown', {
                     bubbles: true,
