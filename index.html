@@ -39,7 +39,7 @@
     </style>
 </head>
 
-<body class="p-3">
+<body class="p-3 m-3">
     <div class="container">
         <main class="visible" style="height:80vh;align-content:center;">
             <div class="d-flex align-justify-center justify-content-center">
@@ -65,15 +65,67 @@
                             </div>
                         </div>
                     </div>
-                    <div>
+                    <div class="mb-5">
                         <div class="progress mt-4" role="progressbar" aria-label="Basic example" aria-valuenow="25"
                             aria-valuemin="0" aria-valuemax="100" style="height:10px;border-radius: 20px;">
                             <div class="progress-bar" style="width: 0%;"></div>
                         </div>
                         <div class="mt-2 d-flex align-content-center justify-content-center">
-                            <span class="badge text-bg-warning text-white">not connected <i class="bi-cloud-slash"></i></span>
+                            <span class="badge text-bg-warning text-white">not connected <i
+                                    class="bi-cloud-slash"></i></span>
                         </div>
                     </div>
+
+                    <div class="mt-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-center align-content-center">
+                                    Stats
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div class="me-3">
+                                        <button type="button" class="btn btn-primary btn-sm position-relative">
+                                            <small>All</small>
+                                            <span
+                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                99+
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="me-3">
+                                        <button type="button" class="btn btn-primary btn-sm position-relative">
+                                            <small>Unread</small>
+                                            <span
+                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                99+
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="me-3">
+                                        <button type="button" class="btn btn-primary btn-sm position-relative">
+                                            <small>Groups</small>
+                                            <span
+                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                99+
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="me-3">
+                                        <button type="button" class="btn btn-primary btn-sm position-relative">
+                                            <small>Contacts</small>
+                                            <span
+                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                99+
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </main>

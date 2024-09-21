@@ -148,13 +148,6 @@ async function handleWhatsAppConnection() {
     }
 
 
-    // Function to process chat lists and store remaining as "contacts"
-    function processChatLists() {
-
-
-        //finalizeConnection();
-    }
-
     // Finalize connection and update UI
     function finalizeConnection() {
         // Stop the loader
