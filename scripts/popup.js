@@ -51,14 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.onMessage.addListener((message) => {
 
         const button = document.getElementById('activateAI');
+        let badge = document.querySelector('.badge');
+        let progressBar = document.querySelector('.progress-bar');
+
 
         if (message.action === 'connected') {
             isWhatsAppConnected = true;
-            button.innerHTML = 'Upload buiness details <i class="bi-card-text"></i>';
+            button.innerHTML = 'Upload buiness details <i class="bi-caret-down"></i>';
+            progressBar.style.width = '100%';
+            badge.classList.remove('text-bg-warning');
+            badge.classList.add('text-bg-success');
+            badge.innerHTML = 'Contacts synced <i class="bi-check-circle"></i>';
         } else if (message.action === 'notconnected') {
             isWhatsAppConnected = false;
             button.innerHTML = 'Connect your Contacts <i class="bi-people"></i>';
-
         }
     });
 
