@@ -1,6 +1,70 @@
 let isWhatsAppConnected = false;  // This variable will track the state of the connection
 let progress = 0;  // This will track the progress percentage
 
+document.addEventListener('DOMContentLoaded', () => {
+    async function onDomcontentLoaded() {
+
+        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: checkIfConnected,
+        });
+
+        function checkIfConnected() {
+            // Check if contacts, all, and unread data are in localStorage
+            const contacts = localStorage.getItem('contacts');
+            const allChats = localStorage.getItem('All');
+            const unreadChats = localStorage.getItem('Unread');
+
+            //Log statements to verify localStorage data
+            console.log('contacts:', contacts);
+            console.log('allChats:', allChats);
+            console.log('unreadChats:', unreadChats);
+
+            //alert("fecthed")
+            if (contacts && allChats && unreadChats) {
+                //alert("buisness shown")
+                // If data is present, show the "Upload business details" button and hide "Connect your Contacts"
+                chrome.runtime.sendMessage({ action: 'connected', success: true });
+                //contactSection.classList.add('hidden');
+                //businessDetailsSection.classList.remove('hidden');
+                //console.log("Business details button shown, contacts button hidden.");
+            } else {
+                //alert("buisness not shown")
+                // Otherwise, show the "Connect your Contacts" button
+                chrome.runtime.sendMessage({ action: 'notconnected', success: false });
+
+                //contactSection.classList.remove('hidden');
+                //businessDetailsSection.classList.add('hidden');
+            }
+
+        }
+        console.log("Connect your Contacts button shown, business details button hidden.");
+
+
+    }
+
+    onDomcontentLoaded()
+
+
+    chrome.runtime.onMessage.addListener((message) => {
+
+        const button = document.getElementById('activateAI');
+
+        if (message.action === 'connected') {
+            isWhatsAppConnected = true;
+            button.innerHTML = 'Upload buiness details <i class="bi-card-text"></i>';
+        } else if (message.action === 'notconnected') {
+            isWhatsAppConnected = false;
+            button.innerHTML = 'Connect your Contacts <i class="bi-people"></i>';
+
+        }
+    });
+
+});
+
+
 // Function to handle connecting WhatsApp contacts in stages
 async function handleWhatsAppConnection() {
     console.log("Button clicked for WhatsApp connection");
@@ -17,8 +81,15 @@ async function handleWhatsAppConnection() {
         loadingMessage.classList.add('visible');
     }
 
-    // Function to be injected into the WhatsApp page to fetch chat names
+    // Function to handle scrolling and fetching chats
     function scrollAndFetchChats(type) {
+        // Function to store chat names in local storage
+        function storeChatNames(type, chatNames) {
+            // Storing chats by type into local storage
+            localStorage.setItem(type, JSON.stringify(chatNames));
+            //console.log(`Stored ${type} chat names:`, chatNames);
+        }
+
         const chatContainer = document.querySelector('#pane-side');
         let chatNames = [];
         const scrollAmount = 500;
@@ -60,7 +131,9 @@ async function handleWhatsAppConnection() {
 
             if (currentScrollPosition + chatContainer.clientHeight >= scrollHeight) {
                 clearInterval(scrollTimer);
-                console.log(JSON.stringify(chatNames, null, 2));
+                //console.log(JSON.stringify(chatNames, null, 2));
+                // Store chat names in local storage
+                storeChatNames(type, chatNames);
                 scrollToTop();
             }
         }
@@ -70,7 +143,7 @@ async function handleWhatsAppConnection() {
                 top: 0,
                 behavior: 'auto'
             });
-            chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true });
+            chrome.runtime.sendMessage({ action: 'scrollCompleted', success: true, type });
         }
 
         const scrollTimer = setInterval(scrollAndFetch, scrollInterval);
@@ -85,32 +158,33 @@ async function handleWhatsAppConnection() {
         });
     }
 
-    // Listen for the message from the content script
+    // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'scrollCompleted' && message.success) {
-            updateProgressAndNextStage();
+            updateProgressAndNextStage(message.type);  // Pass the chat type to updateProgressAndNextStage
         }
     });
 
     // Function to handle progress and update the button and progress bar
-    function updateProgressAndNextStage() {
-        // Increment the progress bar and update text
-        if (progress === 0) {
+    function updateProgressAndNextStage(chatType) {
+        // Increment the progress bar and update text based on the type of chats fetched
+        if (progress === 0 && chatType === 'All') {
             progress = 25;
             progressBar.style.width = `${progress}%`;
             badge.classList.remove('text-bg-warning');
             badge.classList.add('text-bg-success');
             badge.innerHTML = 'Fetched All Contacts <i class="bi-check-circle"></i>';
             simulateUnreadFetch();
-        } else if (progress === 25) {
+        } else if (progress === 25 && chatType === 'Unread') {
             progress = 50;
             progressBar.style.width = `${progress}%`;
             badge.innerHTML = 'Fetched Unread Contacts <i class="bi-check-circle"></i>';
             simulateGroupFetch();
-        } else if (progress === 50) {
+        } else if (progress === 50 && chatType === 'Groups') {
             progress = 75;
             progressBar.style.width = `${progress}%`;
             badge.innerHTML = 'Fetched Group Contacts <i class="bi-check-circle"></i>';
+            // Now that groups have been fetched, process chat lists
             finalizeConnection();
         }
     }
@@ -137,33 +211,19 @@ async function handleWhatsAppConnection() {
         }
     }
 
+
     // Finalize connection and update UI
     function finalizeConnection() {
         // Stop the loader
         loadingMessage.classList.remove('visible');
         loadingMessage.classList.add('hidden');
 
-        // Set final progress state
-        progress = 100;
+        // Set progress up to 75%
         progressBar.style.width = `${progress}%`;
         badge.innerHTML = 'Connection Finalized <i class="bi-check-circle"></i>';
 
         // Change button text to "Connect Your Chats"
         button.innerHTML = 'Connect Your Chats <i class="bi-chat-dots"></i>';
-
-        // Switch back to "All" chats without scrolling
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'All');
-                if (button) {
-                    button.click();
-                    console.log('Switched to All chats');
-                } else {
-                    console.log('All button not found');
-                }
-            }
-        });
     }
 }
 
@@ -179,7 +239,7 @@ async function handleConnectChats() {
     badge.innerHTML = 'All Chats Connected <i class="bi-check-circle"></i>';
 
     // Update button text to reflect final state
-    document.getElementById('activateAI').innerHTML = 'All Chats Connected <i class="bi-chat-dots"></i>';
+    document.getElementById('activateAI').innerHTML = 'Upload buiness details <i class="bi-card-text"></i>';
 
     // Stop the loader if visible
     let loadingMessage = document.getElementById('loadingMessage');
@@ -187,14 +247,52 @@ async function handleConnectChats() {
         loadingMessage.classList.remove('visible');
         loadingMessage.classList.add('hidden');
     }
+
+    // Switch back to "All" chats without scrolling
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+            // Click on the "All" chats button without scrolling
+            const button = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'All');
+            if (button) {
+                button.click();
+                console.log('Switched back to All chats');
+
+                // Retrieve stored chat names
+                const allChats = JSON.parse(localStorage.getItem('All')) || [];
+                const groupChats = JSON.parse(localStorage.getItem('Groups')) || [];
+
+                console.log('All chats:', allChats);
+                console.log('Group chats:', groupChats);
+
+                // Remove group chats from all chats to get individual contacts
+                const contacts = allChats.filter(chat => !groupChats.includes(chat));
+
+                // Store the contacts in local storage
+                localStorage.setItem('contacts', JSON.stringify(contacts));
+                console.log('Stored contacts:', contacts);
+
+            } else {
+                console.log('All button not found');
+            }
+        }
+    });
+}
+
+async function uploadBuisnessDetails() {
+    alert("uploading...")
 }
 
 // Add an event listener to handle the button click
 document.getElementById('activateAI').addEventListener('click', async () => {
-    let buttonText = document.getElementById('activateAI').textContent.trim();
+    let buttonText = document.getElementById('activateAI').innerHTML.trim();
     if (buttonText === 'Connect Your Chats <i class="bi-chat-dots"></i>') {
         await handleConnectChats();  // Handle connect chats button
-    } else {
+    }else if (buttonText === 'Upload buiness details <i class="bi-card-text"></i>') {
+        await uploadBuisnessDetails()
+    }
+    else {
         await handleWhatsAppConnection();  // Handle WhatsApp connection
     }
 });
