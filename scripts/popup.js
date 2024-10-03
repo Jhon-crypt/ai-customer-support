@@ -293,9 +293,9 @@ async function uploadBuisnessDetails() {
 // Add an event listener to handle the button click
 document.getElementById('activateAI').addEventListener('click', async () => {
     let buttonText = document.getElementById('activateAI').innerHTML.trim();
-    if (buttonText === 'Connect Your Chats <i class="bi-chat-dots"></i>') {
+    if (buttonText.includes('Connect Your Chats')) {
         await handleConnectChats();  // Handle connect chats button
-    }else if (buttonText === 'Upload buiness details <i class="bi-card-text"></i>') {
+    }else if (buttonText.includes('Upload buiness details')) {
         await uploadBuisnessDetails()
     }
     else {
