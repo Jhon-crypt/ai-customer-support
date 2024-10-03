@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 target: { tabId: tabs[0].id },
                 func: performScrollInWhatsApp,
                 args: [direction]
-            }, (results) => {
+            }, (results) => { 
                 const updatedContacts = results[0].result;
                 displayContacts(updatedContacts);
             });
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // Function to scroll chat messages up
+    // Function to scroll chat messages 
     function performScrollInChat(pixels) {
         const element = document.querySelector('div._ajyl[tabindex="0"]');
 
