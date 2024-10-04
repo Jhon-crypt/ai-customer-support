@@ -24,19 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             //alert("fecthed")
             if (contacts && allChats && unreadChats) {
-                //alert("buisness shown")
-                // If data is present, show the "Upload business details" button and hide "Connect your Contacts"
                 chrome.runtime.sendMessage({ action: 'connected', success: true });
-                //contactSection.classList.add('hidden');
-                //businessDetailsSection.classList.remove('hidden');
-                //console.log("Business details button shown, contacts button hidden.");
             } else {
-                //alert("buisness not shown")
-                // Otherwise, show the "Connect your Contacts" button
                 chrome.runtime.sendMessage({ action: 'notconnected', success: false });
-
-                //contactSection.classList.remove('hidden');
-                //businessDetailsSection.classList.add('hidden');
             }
 
         }
@@ -286,6 +276,7 @@ async function handleConnectChats() {
     });
 }
 
+
 async function uploadBuisnessDetails() {
     const formSection = document.getElementById('businessDetailsForm');
 
@@ -317,9 +308,39 @@ async function uploadBuisnessDetails() {
         localStorage.setItem('businessName', businessName.value);
         localStorage.setItem('businessAbout', businessAbout.value);
 
-        alert('Business details saved!');
+        formSection.classList.remove('visible');
+        formSection.classList.add('hidden');
+
+
+        const button = document.getElementById('activateAI');
+        let badge = document.querySelector('.badge');
+
+        button.innerHTML = 'Pick Contacts To AutoChat <i class="bi-whatsapp"></i>';
+        badge.innerHTML = 'Buisness details updated <i class="bi-check-circle"></i>';
+
+        //alert('Business details saved!');
     });
 
+}
+
+//
+
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'updated') {
+
+        const button = document.getElementById('activateAI');
+        button.innerHTML = 'Contacts To AutoChat <i class="bi-whatsapp"></i>';
+
+
+    }
+
+});
+
+//});
+
+async function selectorContacts() {
+
+    alert('select contatcts')
 }
 
 // Add an event listener to handle the button click
@@ -329,8 +350,76 @@ document.getElementById('activateAI').addEventListener('click', async () => {
         await handleConnectChats();  // Handle connect chats button
     } else if (buttonText.includes('Update buiness details')) {
         await uploadBuisnessDetails()
+    } else if (buttonText.includes('Contacts To AutoChat')) {
+        await selectorContacts()
     }
     else {
         await handleWhatsAppConnection();  // Handle WhatsApp connection
     }
 });
+
+// Handle hover events to show badge
+document.querySelectorAll('.badge-container').forEach(function (element) {
+    // Handle hover events to show badge and prevent it from hiding until mouse leaves both the icon and the badge itself
+    const hoverBadge = document.getElementById('hover-badge');
+    let isOverBadge = false; // Track if the mouse is over the badge itself
+
+    // Function to show the badge
+    function showBadge(badgeText) {
+        hoverBadge.querySelector('span').textContent = badgeText;
+        hoverBadge.classList.remove('d-none', 'hide-badge');
+        hoverBadge.classList.add('show-badge');
+    }
+
+    // Function to hide the badge
+    function hideBadge() {
+        hoverBadge.classList.remove('show-badge');
+        hoverBadge.classList.add('hide-badge');
+        setTimeout(function () {
+            if (!isOverBadge) {
+                hoverBadge.classList.add('d-none');
+            }
+        }, 300); // Adjust this to match the transition duration
+    }
+
+    // Add hover event listeners to each icon
+    document.querySelectorAll('.badge-container').forEach(function (element) {
+        element.addEventListener('mouseenter', function () {
+            const badgeText = element.getAttribute('data-badge');
+            showBadge(badgeText);
+        });
+
+        element.addEventListener('mouseleave', function () {
+            setTimeout(function () {
+                if (!isOverBadge) { // Only hide the badge if not hovering over it
+                    hideBadge();
+                }
+            }, 0);
+        });
+    });
+
+    // Add hover event listeners to the badge itself
+    hoverBadge.addEventListener('mouseenter', function () {
+        isOverBadge = true; // Mouse is over the badge, don't hide it
+    });
+
+    hoverBadge.addEventListener('mouseleave', function () {
+        isOverBadge = false; // Mouse left the badge, now it's okay to hide
+        hideBadge();
+    });
+
+});
+
+document.getElementById("toggleButton").addEventListener("click", function() {
+    const buisnesection = document.getElementById('businessCard');
+
+    // Toggle form visibility
+    if (buisnesection.classList.contains('hidden')) {
+        buisnesection.classList.remove('hidden');
+        buisnesection.classList.add('visible');
+    } else {
+        buisnesection .classList.remove('visible');
+        buisnesection.classList.add('hidden');
+    }
+});
+

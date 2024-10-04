@@ -36,6 +36,51 @@
     .visible {
       display: block;
     }
+
+    .badge-container {
+      display: inline-block;
+      padding: 5px;
+      border-radius: 8px;
+      transition: background-color 0.3s ease-in-out;
+    }
+
+    .badge-container:hover {
+      margin: 2px;
+      background-color: rgba(0, 123, 255, 0.1);
+      /* Light blue highlight */
+      border: 1px solid #007bff;
+      cursor: pointer;
+    }
+
+    .badge-number {
+      font-weight: bold;
+    }
+
+    .hover-badge {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border-radius: 12px;
+      display: inline-block;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 0.3s ease;
+    }
+
+    .d-none {
+      display: none;
+    }
+
+    .show-badge {
+      display: block;
+      opacity: 1;
+    }
+
+    .hide-badge {
+      opacity: 0;
+    }
   </style>
 </head>
 
@@ -93,7 +138,62 @@
         </div>
       </div>
 
+      <div class="mt-5 mb-5">
+        <div class="card">
+          <div class="card-header text-center">
+            Buisness info
+          </div>
+          <div class="">
+            <div class="hstack gap-1">
+              <div class="p-2 text-sm badge-container" data-badge="All chat list">
+                <small>
+                  <i class="bi-person-lines-fill"></i>
+                  <span class="badge-number">100</span>
+                </small>
+              </div>
+              <div class="p-2 text-sm badge-container" data-badge="Unread">
+                <small>
+                  <i class="bi-exclamation-circle"></i> <span class="badge-number">100</span>
+                </small>
+              </div>
+              <div class="p-2 text-sm badge-container" data-badge="Groups">
+                <small>
+                  <i class="bi-people"></i> <span class="badge-number">100</span>
+                </small>
+              </div>
+              <div class="p-2 text-sm badge-container" data-badge="Contacts">
+                <small>
+                  <i class="bi-person-heart"></i> <span class="badge-number">100</span>
+                </small>
+              </div>
+            </div>
+          </div>
+          <!-- This is the badge that will display below the card -->
+          <div id="hover-badge" class="hover-badge text-center d-none">
+            <span></span>
+          </div>
 
+          <div class="d-flex align-items-center justify-content-center p-2">
+            <div>
+              <div class="btn btn-md btn-outline-primary" id="toggleButton">
+                Business name <i id="caretIcon" class="bi-caret-down"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3 hidden" id="businessCard">
+            <div class="card-header text-center">
+              About
+            </div>
+            <div class="card-body">
+              <div class="text-center">
+                shsgdhghjsdfghds
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
   </div>
   </div>
