@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (message.action === 'connected') {
             isWhatsAppConnected = true;
-            button.innerHTML = 'Upload buiness details <i class="bi-caret-down"></i>';
+            button.innerHTML = 'Update buiness details <i class="bi-caret-down"></i>';
             progressBar.style.width = '100%';
             badge.classList.remove('text-bg-warning');
             badge.classList.add('text-bg-success');
@@ -245,7 +245,7 @@ async function handleConnectChats() {
     badge.innerHTML = 'All Chats Connected <i class="bi-check-circle"></i>';
 
     // Update button text to reflect final state
-    document.getElementById('activateAI').innerHTML = 'Upload buiness details <i class="bi-card-text"></i>';
+    document.getElementById('activateAI').innerHTML = 'Update buiness details <i class="bi-card-text"></i>';
 
     // Stop the loader if visible
     let loadingMessage = document.getElementById('loadingMessage');
@@ -287,7 +287,39 @@ async function handleConnectChats() {
 }
 
 async function uploadBuisnessDetails() {
-    alert("uploading...")
+    const formSection = document.getElementById('businessDetailsForm');
+
+    // Toggle form visibility
+    if (formSection.classList.contains('hidden')) {
+        formSection.classList.remove('hidden');
+        formSection.classList.add('visible');
+    } else {
+        formSection.classList.remove('visible');
+        formSection.classList.add('hidden');
+    }
+
+    const form = document.getElementById('businessDetailsForm');
+    const businessName = document.getElementById('businessName');
+    const businessAbout = document.getElementById('businessAbout');
+
+    // Load stored values (if available)
+    const savedBusinessName = localStorage.getItem('businessName');
+    const savedBusinessAbout = localStorage.getItem('businessAbout');
+
+    if (savedBusinessName) businessName.value = savedBusinessName;
+    if (savedBusinessAbout) businessAbout.value = savedBusinessAbout;
+
+    // Handle form submission
+    form.addEventListener('submit', (event) => {
+        event.preventDefault(); // Prevent form submission
+
+        // Save form data in localStorage
+        localStorage.setItem('businessName', businessName.value);
+        localStorage.setItem('businessAbout', businessAbout.value);
+
+        alert('Business details saved!');
+    });
+
 }
 
 // Add an event listener to handle the button click
@@ -295,7 +327,7 @@ document.getElementById('activateAI').addEventListener('click', async () => {
     let buttonText = document.getElementById('activateAI').innerHTML.trim();
     if (buttonText.includes('Connect Your Chats')) {
         await handleConnectChats();  // Handle connect chats button
-    }else if (buttonText.includes('Upload buiness details')) {
+    } else if (buttonText.includes('Update buiness details')) {
         await uploadBuisnessDetails()
     }
     else {
